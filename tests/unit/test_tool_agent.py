@@ -42,12 +42,14 @@ async def test_tool_agent_return_eligibility() -> None:
     order_repo = InMemoryOrderRepository()
     agent = BoundedToolAgent(order_repo=order_repo)
 
-    response, buttons = await agent.handle_return_query(
+    response, buttons, document = await agent.handle_return_query(
         "I want to return order ORD-1003 because it's defective"
     )
     assert "eligible" in response.lower()
     assert "prepaid return label" in response.lower()
     assert buttons is not None
+    assert document is not None
+    assert "ORD-1003.pdf" in document["document_url"]
 
 
 @pytest.mark.asyncio
@@ -71,6 +73,6 @@ async def test_tool_agent_lookup_order_flexible_phrasing() -> None:
     assert "SHIPPED" in resp3
 
     # return with ord 1003
-    resp4, _ = await agent.handle_return_query("Return ord 1003")
+    resp4, _, _ = await agent.handle_return_query("Return ord 1003")
     assert "ORD-1003" in resp4
     assert "eligible" in resp4.lower()

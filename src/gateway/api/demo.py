@@ -73,15 +73,23 @@ def create_demo_router(
         # Retrieve updated session state
         session = store.get_session(req.phone_number)
 
-        # Extract reply from mock channel
+        # Extract reply and attachments from mock channel
         bot_reply: str | None = None
         buttons: list[dict[str, str]] | None = None
-        if mock_channel.sent_messages:
-            last_msg = mock_channel.sent_messages[-1]
-            bot_reply = str(last_msg.get("body", ""))
-            raw_buttons = last_msg.get("buttons")
-            if isinstance(raw_buttons, list):
-                buttons = raw_buttons
+        document: dict[str, str] | None = None
+
+        for msg in mock_channel.sent_messages:
+            if msg.get("type") in ("text", "interactive"):
+                bot_reply = str(msg.get("body", ""))
+                raw_buttons = msg.get("buttons")
+                if isinstance(raw_buttons, list):
+                    buttons = raw_buttons
+            elif msg.get("type") == "document":
+                document = {
+                    "document_url": str(msg.get("document_url", "")),
+                    "filename": str(msg.get("filename", "document.pdf")),
+                    "caption": str(msg.get("caption", "")),
+                }
 
         bot_muted = session.status == SessionStatus.ESCALATED_HUMAN and bot_reply is None
 
@@ -94,6 +102,7 @@ def create_demo_router(
             "session_status": session.status.value,
             "bot_reply": bot_reply,
             "buttons": buttons,
+            "document": document,
             "bot_muted": bot_muted,
             "transcript_count": len(session.transcript),
         }

@@ -109,3 +109,22 @@ class MetaCloudAPIAdapter:
             },
         }
         return await self._post_with_retry(payload)
+
+    async def send_document(
+        self, to_phone: str, document_url: str, filename: str, caption: str | None = None
+    ) -> bool:
+        doc_payload: dict[str, Any] = {
+            "link": document_url,
+            "filename": filename,
+        }
+        if caption:
+            doc_payload["caption"] = caption
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": to_phone,
+            "type": "document",
+            "document": doc_payload,
+        }
+        return await self._post_with_retry(payload)

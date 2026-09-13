@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from gateway.api.demo import create_demo_router
+from gateway.api.media import create_media_router
 from gateway.api.webhook import create_webhook_router
 from gateway.channel.base import WhatsAppChannelPort
 from gateway.channel.meta import MetaCloudAPIAdapter
@@ -17,6 +18,7 @@ from gateway.queue.in_process import InProcessAsyncQueue
 from gateway.repository.idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from gateway.repository.order import InMemoryOrderRepository, OrderRepository
 from gateway.repository.session import InMemorySessionStore, SessionStore
+from gateway.repository.shopify import ShopifyOrderAdapter
 
 
 def create_app(
@@ -30,7 +32,19 @@ def create_app(
     cfg = app_settings or global_settings
     idem_store = idempotency_store or InMemoryIdempotencyStore()
     msg_queue = queue or InProcessAsyncQueue()
-    repo = order_repo or InMemoryOrderRepository()
+
+    # Determine order repository based on configuration
+    repo: OrderRepository
+    if order_repo is not None:
+        repo = order_repo
+    elif cfg.order_repository_type == "shopify":
+        repo = ShopifyOrderAdapter(
+            shop_domain=cfg.shopify_store_url,
+            access_token=cfg.shopify_access_token,
+        )
+    else:
+        repo = InMemoryOrderRepository()
+
     store = session_store or InMemorySessionStore()
 
     # Determine channel adapter based on settings
@@ -93,6 +107,10 @@ def create_app(
         processor=processor,
     )
     app.include_router(demo_router)
+
+    # Dynamic Media Router (PDF Return Labels & Invoices)
+    media_router = create_media_router(order_repo=repo)
+    app.include_router(media_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

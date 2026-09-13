@@ -22,7 +22,7 @@ async def test_multiturn_memory_return_followup() -> None:
     assert session.last_referenced_order_id == "ORD-1003"
 
     # Turn 2: Follow-up using pronoun "it" without repeating order number
-    reply2, buttons2 = await agent.handle_return_query(
+    reply2, buttons2, document2 = await agent.handle_return_query(
         query="Can I return it please?",
         sender_phone="15551112233",
         session=session,
@@ -30,6 +30,8 @@ async def test_multiturn_memory_return_followup() -> None:
     assert "ORD-1003" in reply2
     assert "eligible" in reply2.lower()
     assert buttons2 is not None
+    assert document2 is not None
+    assert "ORD-1003.pdf" in document2["document_url"]
 
 
 @pytest.mark.asyncio

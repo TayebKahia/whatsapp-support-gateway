@@ -30,5 +30,19 @@ class MockWhatsAppAdapter:
         )
         return True
 
+    async def send_document(
+        self, to_phone: str, document_url: str, filename: str, caption: str | None = None
+    ) -> bool:
+        self.sent_messages.append(
+            {
+                "to": to_phone,
+                "type": "document",
+                "document_url": document_url,
+                "filename": filename,
+                "caption": caption,
+            }
+        )
+        return True
+
     def clear(self) -> None:
         self.sent_messages.clear()

@@ -90,13 +90,22 @@ class MessageProcessor:
             self.session_store.save_session(session)
 
         elif intent == Intent.RETURN_QUERY:
-            reply, buttons = await self.agent.handle_return_query(
+            reply, buttons, document = await self.agent.handle_return_query(
                 event.body, sender_phone=phone, session=session
             )
             if buttons:
                 await self.channel.send_interactive_buttons(phone, reply, buttons)
             else:
                 await self.channel.send_text(phone, reply)
+
+            if document:
+                await self.channel.send_document(
+                    phone,
+                    document_url=document["document_url"],
+                    filename=document["filename"],
+                    caption=document.get("caption"),
+                )
+
             self.session_store.append_transcript(phone, role="assistant", message=reply)
             self.session_store.save_session(session)
 

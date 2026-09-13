@@ -53,16 +53,16 @@ class IntentRouter:
         if clean_text in menu_keywords or any(clean_text.startswith(k) for k in menu_keywords):
             return Intent.MENU
 
+        # Return / refund check (more specific intent)
+        return_keywords = ["return", "refund", "exchange", "defective", "broken"]
+        if any(keyword in clean_text for keyword in return_keywords):
+            return Intent.RETURN_QUERY
+
         # Order lookup check
         order_keywords = ["order", "track", "tracking", "package", "where is", "shipping", "arrive"]
         if self._order_pattern.search(text) or any(
             keyword in clean_text for keyword in order_keywords
         ):
             return Intent.ORDER_QUERY
-
-        # Return / refund check
-        return_keywords = ["return", "refund", "exchange", "defective", "broken"]
-        if any(keyword in clean_text for keyword in return_keywords):
-            return Intent.RETURN_QUERY
 
         return Intent.UNKNOWN

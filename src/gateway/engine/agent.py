@@ -158,7 +158,7 @@ class BoundedToolAgent:
         query: str,
         sender_phone: str | None = None,
         session: SessionRecord | None = None,
-    ) -> tuple[str, list[dict[str, str]] | None]:
+    ) -> tuple[str, list[dict[str, str]] | None, dict[str, str] | None]:
         order_id = self.extract_order_id(query, session=session)
         if not order_id:
             return (
@@ -167,6 +167,7 @@ class BoundedToolAgent:
                     "(for example: *#ORD-1003*)."
                 ),
                 None,
+                None,
             )
 
         args = CheckReturnEligibilityArgs(order_id=order_id, reason=query)
@@ -174,6 +175,7 @@ class BoundedToolAgent:
         if not order:
             return (
                 f"We could not find order *{args.order_id}* in our records.",
+                None,
                 None,
             )
 
@@ -192,7 +194,7 @@ class BoundedToolAgent:
                     f"For your privacy, order *#{order.order_id}* is associated with a different phone number. "
                     f"Please reply with the *last 4 digits* of the phone number on file to verify return eligibility."
                 )
-                return challenge, None
+                return challenge, None, None
 
             if order.order_id not in session.verified_order_ids:
                 session.verified_order_ids.append(order.order_id)
@@ -207,9 +209,19 @@ class BoundedToolAgent:
         ]
 
         if result["eligible"]:
+            doc_payload = {
+                "document_url": f"/media/return-labels/{order.order_id}.pdf",
+                "filename": f"return_label_{order.order_id}.pdf",
+                "caption": f"📄 Prepaid Return Label for #{order.order_id}",
+            }
             return (
                 f"✅ *Return Approved for #{args.order_id}*\n\n{result['instructions']}",
                 buttons,
+                doc_payload,
             )
 
-        return f"ℹ️ *Return Ineligible for #{args.order_id}*\n\n{result['reason']}", buttons
+        return (
+            f"ℹ️ *Return Ineligible for #{args.order_id}*\n\n{result['reason']}",
+            buttons,
+            None,
+        )

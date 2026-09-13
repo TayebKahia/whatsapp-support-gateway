@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     # External Webhook Integration (e.g. n8n / Zapier)
     integration_webhook_url: HttpUrl | None = None
 
+    # E-Commerce Order Backend
+    order_repository_type: Literal["in_memory", "shopify"] = "in_memory"
+    shopify_store_url: str | None = None
+    shopify_access_token: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

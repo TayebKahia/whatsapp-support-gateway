@@ -17,3 +17,11 @@ class WhatsAppChannelPort(Protocol):
         buttons format: [{"id": "btn_1", "title": "Option 1"}, ...]
         """
         ...
+
+    async def send_document(
+        self, to_phone: str, document_url: str, filename: str, caption: str | None = None
+    ) -> bool:
+        """
+        Send a media document (e.g. PDF shipping label or invoice).
+        """
+        ...

@@ -199,6 +199,47 @@
       border-color: var(--wa-emerald);
     }
 
+    .wa-doc-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.2s;
+    }
+    .wa-doc-card:hover {
+      background: rgba(37, 211, 102, 0.18);
+      border-color: var(--wa-emerald);
+      transform: translateY(-1px);
+    }
+    .doc-icon { font-size: 1.8rem; }
+    .doc-meta { flex: 1; overflow: hidden; }
+    .doc-title {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .doc-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .doc-dl-badge {
+      background: rgba(37, 211, 102, 0.2);
+      color: var(--wa-emerald);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
     .quick-chips {
       display: flex;
       gap: 6px;
@@ -411,6 +452,7 @@
           <span class="chip" onclick="sendPrompt('Can I return it?')">Can I return it?</span>
           <span class="chip" onclick="sendPrompt('4567')">Verify: 4567</span>
           <span class="chip" onclick="sendPrompt('Return #ORD-1003')">Return #ORD-1003</span>
+          <span class="chip" onclick="sendPrompt('Track Shopify 1001')">Shopify #1001</span>
           <span class="chip" onclick="sendPrompt('human')">Talk to Human</span>
           <span class="chip" onclick="sendPrompt('menu')">Menu</span>
         </div>
@@ -554,6 +596,21 @@
           const botBubble = document.createElement("div");
           botBubble.className = "msg-bubble msg-bot";
 
+          let docHtml = "";
+          if (data.document && data.document.document_url) {
+            docHtml = `
+              <a href="${data.document.document_url}" target="_blank" class="wa-doc-card">
+                <span class="doc-icon">📄</span>
+                <div class="doc-meta">
+                  <div class="doc-title">${data.document.filename}</div>
+                  <div class="doc-sub">Prepaid Shipping Label • Click to View & Print</div>
+                </div>
+                <div class="doc-dl-badge">⬇</div>
+              </a>
+            `;
+            appendLog("DOCUMENT", "tag-green", `Delivered PDF return label: ${data.document.filename}`);
+          }
+
           let buttonsHtml = "";
           if (data.buttons && data.buttons.length > 0) {
             buttonsHtml = `<div class="interactive-buttons-container">` +
@@ -561,7 +618,7 @@
               `</div>`;
           }
 
-          botBubble.innerHTML = `${data.bot_reply.replace(/\n/g, '<br>')}${buttonsHtml}<div class="msg-time">${now}</div>`;
+          botBubble.innerHTML = `${data.bot_reply.replace(/\n/g, '<br>')}${docHtml}${buttonsHtml}<div class="msg-time">${now}</div>`;
           chatMessages.appendChild(botBubble);
           chatMessages.scrollTop = chatMessages.scrollHeight;
           appendLog("DISPATCH", "tag-green", `Outbound WhatsApp message delivered successfully.`);

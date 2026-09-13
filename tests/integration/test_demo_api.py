@@ -79,3 +79,28 @@ async def test_demo_escalation_and_operator_resolve() -> None:
         data3 = resp3.json()
         assert data3["session_status"] == "ACTIVE_BOT"
         assert data3["bot_muted"] is False
+
+
+@pytest.mark.asyncio
+async def test_demo_return_delivers_document_and_media_route() -> None:
+    app = create_app()
+    transport = ASGITransport(app=app)
+    # ORD-1003 belongs to 15551112233
+    phone = "15551112233"
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post(
+            "/demo/send",
+            json={"phone_number": phone, "message": "Return ORD-1003"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["intent"] == "RETURN_QUERY"
+        assert "Approved" in data["bot_reply"]
+        assert data["document"] is not None
+        assert "ORD-1003.pdf" in data["document"]["document_url"]
+
+        # Fetch the actual media PDF route
+        pdf_resp = await client.get(data["document"]["document_url"])
+        assert pdf_resp.status_code == 200
+        assert "application/pdf" in pdf_resp.headers["Content-Type"]
+        assert pdf_resp.content.startswith(b"%PDF-")
