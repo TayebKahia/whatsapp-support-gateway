@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Support Gateway — Live Simulator & Cockpit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-bg: #111827;
+      --card-bg: #1a2234;
+      --border: #2d3748;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --wa-emerald: #25D366;
+      --wa-dark: #128C7E;
+      --wa-bg: #0b141a;
+      --wa-incoming: #202c33;
+      --wa-outgoing: #005c4b;
+      --accent-blue: #3b82f6;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 16px 32px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+    .logo-badge {
+      background: rgba(37, 211, 102, 0.15);
+      color: var(--wa-emerald);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--wa-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--wa-emerald);
+    }
+
+    .main-container {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 32px;
+      padding: 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* PHONE SIMULATOR */
+    .phone-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .phone-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 740px;
+      background: var(--wa-bg);
+      border: 8px solid #1f293d;
+      border-radius: 40px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+    .phone-notch {
+      width: 140px;
+      height: 22px;
+      background: #1f293d;
+      border-bottom-left-radius: 14px;
+      border-bottom-right-radius: 14px;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    .chat-header {
+      background: var(--wa-incoming);
+      padding: 28px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .chat-avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--wa-dark), var(--wa-emerald));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .chat-info h3 { font-size: 0.95rem; font-weight: 600; color: #fff; }
+    .chat-info p { font-size: 0.75rem; color: var(--wa-emerald); }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg-bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      position: relative;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .msg-user {
+      background: var(--wa-outgoing);
+      color: #e9edef;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .msg-bot {
+      background: var(--wa-incoming);
+      color: #e9edef;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .msg-time {
+      font-size: 0.68rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .interactive-buttons-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .wa-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--wa-emerald);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .wa-btn:hover {
+      background: rgba(37, 211, 102, 0.2);
+      border-color: var(--wa-emerald);
+    }
+
+    .quick-chips {
+      display: flex;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #0d141a;
+      overflow-x: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .chip {
+      background: #1f2c34;
+      color: #9ca3af;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.15s;
+    }
+    .chip:hover { color: #fff; border-color: var(--wa-emerald); }
+
+    .chat-input-area {
+      padding: 10px 12px;
+      background: var(--wa-incoming);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .chat-input {
+      flex: 1;
+      background: #2a3942;
+      border: none;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+    .send-btn {
+      background: var(--wa-dark);
+      border: none;
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .send-btn:hover { background: var(--wa-emerald); }
+
+    /* TELEMETRY COCKPIT */
+    .cockpit-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .metric-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .metric-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .metric-unit { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
+    .badge-active { color: var(--wa-emerald); }
+    .badge-escalated { color: var(--accent-amber); }
+
+    .operator-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.3s;
+    }
+    .operator-card.escalated {
+      border-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.05);
+    }
+    .operator-info h4 { font-size: 1rem; margin-bottom: 4px; }
+    .operator-info p { font-size: 0.82rem; color: var(--text-muted); }
+    .btn-resolve {
+      background: var(--accent-blue);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-resolve:hover { opacity: 0.9; }
+
+    .console-section {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .console-header {
+      padding: 12px 18px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .console-log {
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #d1d5db;
+      overflow-y: auto;
+      flex: 1;
+      max-height: 340px;
+    }
+    .log-line { margin-bottom: 6px; }
+    .log-ts { color: var(--text-muted); }
+    .log-tag { font-weight: 600; }
+    .tag-green { color: var(--wa-emerald); }
+    .tag-blue { color: var(--accent-blue); }
+    .tag-amber { color: var(--accent-amber); }
+
+    @media (max-width: 1024px) {
+      .main-container { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <span>WhatsApp Support Gateway</span>
+      <span class="logo-badge">Meta Cloud v20.0</span>
+    </div>
+    <div class="header-meta">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="status-dot"></span>
+        <span>Gateway Online</span>
+      </div>
+      <span>Phone: +1 555-019-2834</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- LEFT PANE: WHATSAPP PHONE SIMULATOR -->
+    <div class="phone-column">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="chat-header">
+          <div class="chat-avatar">🛍️</div>
+          <div class="chat-info">
+            <h3>E-Commerce Care</h3>
+            <p id="botStatusText">● Online (Bot Active)</p>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg-bubble msg-bot">
+            Welcome to Customer Care! How can we assist you today?
+            <div class="interactive-buttons-container">
+              <button class="wa-btn" onclick="sendPrompt('Where is my order #ORD-1001?')">📦 Track #ORD-1001</button>
+              <button class="wa-btn" onclick="sendPrompt('Can I return order ORD-1003?')">↩️ Return #ORD-1003</button>
+              <button class="wa-btn" onclick="sendPrompt('I need to speak to a human representative')">👤 Human Support</button>
+            </div>
+            <div class="msg-time">10:00 AM</div>
+          </div>
+        </div>
+
+        <div class="quick-chips">
+          <span class="chip" onclick="sendPrompt('#ORD-1001')">Track #ORD-1001</span>
+          <span class="chip" onclick="sendPrompt('#ORD-1002')">Track #ORD-1002</span>
+          <span class="chip" onclick="sendPrompt('Return #ORD-1003')">Return #ORD-1003</span>
+          <span class="chip" onclick="sendPrompt('human')">Talk to Human</span>
+          <span class="chip" onclick="sendPrompt('menu')">Menu</span>
+        </div>
+
+        <div class="chat-input-area">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type a WhatsApp message..." onkeydown="if(event.key==='Enter') sendMessage()">
+          <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: ENGINE TELEMETRY & OPERATOR COCKPIT -->
+    <div class="cockpit-column">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-title">Webhook Latency</span>
+          <div class="metric-value" id="valLatency">18 <span class="metric-unit">ms</span></div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">HMAC Security</span>
+          <div class="metric-value badge-active" id="valHmac">VALID</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Intent Detected</span>
+          <div class="metric-value" style="font-size: 1.15rem;" id="valIntent">MENU</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Session State</span>
+          <div class="metric-value badge-active" style="font-size: 1.15rem;" id="valState">ACTIVE_BOT</div>
+        </div>
+      </div>
+
+      <!-- OPERATOR CONSOLE / HUMAN ESCALATION CARD -->
+      <div class="operator-card" id="operatorCard">
+        <div class="operator-info">
+          <h4 id="operatorTitle">Support Operator Station</h4>
+          <p id="operatorDesc">Bot is currently handling all incoming inquiries automatically.</p>
+        </div>
+        <button class="btn-resolve" id="btnResolve" style="display: none;" onclick="resolveEscalation()">Unmute Bot / Resolve</button>
+      </div>
+
+      <!-- LIVE ENGINE LOG -->
+      <div class="console-section">
+        <div class="console-header">
+          <span>⚡ REAL-TIME BACKEND EVENT STREAM</span>
+          <span id="logCount">0 events</span>
+        </div>
+        <div class="console-log" id="consoleLog">
+          <div class="log-line">
+            <span class="log-ts">[SYSTEM]</span> Gateway initialized with <span class="tag-green">InProcessAsyncQueue</span> and <span class="tag-blue">InMemoryOrderRepository</span>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SENDER_PHONE = "15550192834";
+
+    function appendLog(tag, tagClass, text) {
+      const consoleLog = document.getElementById("consoleLog");
+      const ts = new Date().toLocaleTimeString();
+      const line = document.createElement("div");
+      line.className = "log-line";
+      line.innerHTML = `<span class="log-ts">[${ts}]</span> <span class="log-tag ${tagClass}">[${tag}]</span> ${text}`;
+      consoleLog.appendChild(line);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    function sendPrompt(text) {
+      document.getElementById("chatInput").value = text;
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = "";
+      const chatMessages = document.getElementById("chatMessages");
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Append user bubble
+      const userBubble = document.createElement("div");
+      userBubble.className = "msg-bubble msg-user";
+      userBubble.innerHTML = `${text}<div class="msg-time">${now} ✓✓</div>`;
+      chatMessages.appendChild(userBubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      appendLog("INBOUND", "tag-blue", `POST /webhook received from ${SENDER_PHONE}: "${text}"`);
+
+      try {
+        const response = await fetch("/demo/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone_number: SENDER_PHONE, message: text })
+        });
+
+        const data = await response.json();
+
+        // Update metrics
+        document.getElementById("valLatency").innerHTML = `${Math.round(data.latency_ms)} <span class="metric-unit">ms</span>`;
+        document.getElementById("valIntent").innerText = data.intent;
+        document.getElementById("valState").innerText = data.session_status;
+
+        appendLog("SECURITY", "tag-green", `HMAC-SHA256 signature verified (WAMID: ${data.wamid.slice(0, 16)}...)`);
+        appendLog("ROUTER", "tag-blue", `Intent classified: ${data.intent}`);
+
+        if (data.session_status === "ESCALATED_HUMAN") {
+          document.getElementById("valState").className = "metric-value badge-escalated";
+          document.getElementById("botStatusText").innerText = "● Muted (Human Escalated)";
+          document.getElementById("botStatusText").style.color = "var(--accent-amber)";
+          document.getElementById("operatorCard").className = "operator-card escalated";
+          document.getElementById("operatorTitle").innerText = "🚨 Escalation Alert: Human Agent Needed";
+          document.getElementById("operatorDesc").innerText = `Session marked ESCALATED_HUMAN. Bot auto-replies are muted.`;
+          document.getElementById("btnResolve").style.display = "block";
+          appendLog("ESCALATION", "tag-amber", `Dispatched outbound webhook event to n8n/Zendesk for ${SENDER_PHONE}`);
+        }
+
+        if (data.bot_reply) {
+          const botBubble = document.createElement("div");
+          botBubble.className = "msg-bubble msg-bot";
+          botBubble.innerHTML = `${data.bot_reply.replace(/\n/g, '<br>')}<div class="msg-time">${now}</div>`;
+          chatMessages.appendChild(botBubble);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          appendLog("DISPATCH", "tag-green", `Outbound WhatsApp message delivered successfully.`);
+        } else if (data.bot_muted) {
+          appendLog("MUTED", "tag-amber", `Message recorded in transcript. Zero reply dispatched (bot is muted).`);
+        }
+      } catch (err) {
+        appendLog("ERROR", "tag-amber", `Failed to send message: ${err}`);
+      }
+    }
+
+    async function resolveEscalation() {
+      try {
+        await fetch(`/demo/resolve/${SENDER_PHONE}`, { method: "POST" });
+        document.getElementById("valState").innerText = "ACTIVE_BOT";
+        document.getElementById("valState").className = "metric-value badge-active";
+        document.getElementById("botStatusText").innerText = "● Online (Bot Active)";
+        document.getElementById("botStatusText").style.color = "var(--wa-emerald)";
+        document.getElementById("operatorCard").className = "operator-card";
+        document.getElementById("operatorTitle").innerText = "Support Operator Station";
+        document.getElementById("operatorDesc").innerText = "Bot is currently handling all incoming inquiries automatically.";
+        document.getElementById("btnResolve").style.display = "none";
+        appendLog("OPERATOR", "tag-green", `Human agent resolved session. Bot unmuted for ${SENDER_PHONE}.`);
+      } catch (err) {
+        appendLog("ERROR", "tag-amber", `Failed to resolve escalation: ${err}`);
+      }
+    }
+  </script>
+</body>
+</html>
