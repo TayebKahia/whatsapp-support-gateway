@@ -75,9 +75,13 @@ def create_demo_router(
 
         # Extract reply from mock channel
         bot_reply: str | None = None
+        buttons: list[dict[str, str]] | None = None
         if mock_channel.sent_messages:
             last_msg = mock_channel.sent_messages[-1]
             bot_reply = str(last_msg.get("body", ""))
+            raw_buttons = last_msg.get("buttons")
+            if isinstance(raw_buttons, list):
+                buttons = raw_buttons
 
         bot_muted = session.status == SessionStatus.ESCALATED_HUMAN and bot_reply is None
 
@@ -89,6 +93,7 @@ def create_demo_router(
             "intent": intent.value,
             "session_status": session.status.value,
             "bot_reply": bot_reply,
+            "buttons": buttons,
             "bot_muted": bot_muted,
             "transcript_count": len(session.transcript),
         }

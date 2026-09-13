@@ -47,7 +47,7 @@ async def test_full_e2e_order_tracking_flow() -> None:
         queue=queue,
     )
 
-    phone = "15559871122"
+    phone = "15551234567"
     wamid = "wamid.E2E_ORDER_001"
     payload = f"""{{
         "object": "whatsapp_business_account",

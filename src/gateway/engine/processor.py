@@ -52,7 +52,21 @@ class MessageProcessor:
         intent = self.router.route(event.body, interactive_id=event.interactive_id)
         logger.info("Routed event %s from %s as intent %s", event.wamid, phone, intent.value)
 
-        # 4. Execute workflow based on intent
+        # 4. Check for active security verification challenge
+        if session.pending_verification_order_id and intent not in (
+            Intent.HUMAN_ESCALATION,
+            Intent.MENU,
+        ):
+            reply, buttons, _ = await self.agent.verify_order_ownership(event.body, session)
+            if buttons:
+                await self.channel.send_interactive_buttons(phone, reply, buttons)
+            else:
+                await self.channel.send_text(phone, reply)
+            self.session_store.append_transcript(phone, role="assistant", message=reply)
+            self.session_store.save_session(session)
+            return
+
+        # 5. Execute workflow based on intent
         if intent == Intent.MENU:
             body = "Welcome to Customer Support! How can we help you today?"
             buttons = [
@@ -62,16 +76,29 @@ class MessageProcessor:
             ]
             await self.channel.send_interactive_buttons(phone, body, buttons)
             self.session_store.append_transcript(phone, role="assistant", message=body)
+            self.session_store.save_session(session)
 
         elif intent == Intent.ORDER_QUERY:
-            reply = await self.agent.handle_order_query(event.body)
-            await self.channel.send_text(phone, reply)
+            reply, buttons = await self.agent.handle_order_query(
+                event.body, sender_phone=phone, session=session
+            )
+            if buttons:
+                await self.channel.send_interactive_buttons(phone, reply, buttons)
+            else:
+                await self.channel.send_text(phone, reply)
             self.session_store.append_transcript(phone, role="assistant", message=reply)
+            self.session_store.save_session(session)
 
         elif intent == Intent.RETURN_QUERY:
-            reply = await self.agent.handle_return_query(event.body)
-            await self.channel.send_text(phone, reply)
+            reply, buttons = await self.agent.handle_return_query(
+                event.body, sender_phone=phone, session=session
+            )
+            if buttons:
+                await self.channel.send_interactive_buttons(phone, reply, buttons)
+            else:
+                await self.channel.send_text(phone, reply)
             self.session_store.append_transcript(phone, role="assistant", message=reply)
+            self.session_store.save_session(session)
 
         elif intent == Intent.HUMAN_ESCALATION:
             self.state_machine.transition_to_escalated(session, reason=event.body)

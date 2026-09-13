@@ -22,7 +22,7 @@ async def test_demo_send_and_telemetry() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         payload = {
-            "phone_number": "15550009999",
+            "phone_number": "15551234567",
             "message": "Where is my order #ORD-1001?",
         }
         response = await client.post("/demo/send", json=payload)
@@ -33,6 +33,9 @@ async def test_demo_send_and_telemetry() -> None:
         assert data["signature_valid"] is True
         assert data["intent"] == "ORDER_QUERY"
         assert "ORD-1001" in data["bot_reply"]
+        assert "buttons" in data
+        assert data["buttons"] is not None
+        assert any(b["id"] == "btn_return" for b in data["buttons"])
         assert data["latency_ms"] > 0
         assert data["session_status"] == "ACTIVE_BOT"
 

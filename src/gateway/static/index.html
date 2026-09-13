@@ -369,13 +369,16 @@
       <span>WhatsApp Support Gateway</span>
       <span class="logo-badge">Meta Cloud v20.0</span>
     </div>
-    <div class="header-meta">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span class="status-dot"></span>
-        <span>Gateway Online</span>
+      <div class="header-meta">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot"></span>
+          <span>Gateway Online</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Simulated Phone:</span>
+          <input type="text" id="phoneInput" value="15551234567" style="background:#1f293d; color:#25D366; border:1px solid #2d3748; border-radius:6px; padding:3px 8px; font-size:0.8rem; width:130px; font-family:'JetBrains Mono',monospace;">
+        </div>
       </div>
-      <span>Phone: +1 555-019-2834</span>
-    </div>
   </header>
 
   <div class="main-container">
@@ -404,8 +407,9 @@
         </div>
 
         <div class="quick-chips">
-          <span class="chip" onclick="sendPrompt('#ORD-1001')">Track #ORD-1001</span>
-          <span class="chip" onclick="sendPrompt('#ORD-1002')">Track #ORD-1002</span>
+          <span class="chip" onclick="sendPrompt('Where is ord 1001?')">Track #ORD-1001</span>
+          <span class="chip" onclick="sendPrompt('Can I return it?')">Can I return it?</span>
+          <span class="chip" onclick="sendPrompt('4567')">Verify: 4567</span>
           <span class="chip" onclick="sendPrompt('Return #ORD-1003')">Return #ORD-1003</span>
           <span class="chip" onclick="sendPrompt('human')">Talk to Human</span>
           <span class="chip" onclick="sendPrompt('menu')">Menu</span>
@@ -464,7 +468,10 @@
   </div>
 
   <script>
-    const SENDER_PHONE = "15550192834";
+    function getSenderPhone() {
+      const input = document.getElementById("phoneInput");
+      return (input && input.value.trim()) || "15551234567";
+    }
 
     function appendLog(tag, tagClass, text) {
       const consoleLog = document.getElementById("consoleLog");
@@ -481,12 +488,20 @@
       sendMessage();
     }
 
-    async function sendMessage() {
+    function sendInteractive(id, title) {
+      sendMessage(title, id);
+    }
+
+    async function sendMessage(textOverride = null, interactiveId = null) {
       const input = document.getElementById("chatInput");
-      const text = input.value.trim();
+      const text = textOverride !== null ? textOverride.trim() : input.value.trim();
       if (!text) return;
 
-      input.value = "";
+      if (textOverride === null) {
+        input.value = "";
+      }
+
+      const senderPhone = getSenderPhone();
       const chatMessages = document.getElementById("chatMessages");
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -497,13 +512,21 @@
       chatMessages.appendChild(userBubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      appendLog("INBOUND", "tag-blue", `POST /webhook received from ${SENDER_PHONE}: "${text}"`);
+      if (interactiveId) {
+        appendLog("INBOUND", "tag-blue", `POST /webhook [Button Click] from ${senderPhone}: "${text}" (id: ${interactiveId})`);
+      } else {
+        appendLog("INBOUND", "tag-blue", `POST /webhook received from ${senderPhone}: "${text}"`);
+      }
 
       try {
         const response = await fetch("/demo/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone_number: SENDER_PHONE, message: text })
+          body: JSON.stringify({
+            phone_number: senderPhone,
+            message: text,
+            interactive_id: interactiveId
+          })
         });
 
         const data = await response.json();
@@ -524,13 +547,21 @@
           document.getElementById("operatorTitle").innerText = "🚨 Escalation Alert: Human Agent Needed";
           document.getElementById("operatorDesc").innerText = `Session marked ESCALATED_HUMAN. Bot auto-replies are muted.`;
           document.getElementById("btnResolve").style.display = "block";
-          appendLog("ESCALATION", "tag-amber", `Dispatched outbound webhook event to n8n/Zendesk for ${SENDER_PHONE}`);
+          appendLog("ESCALATION", "tag-amber", `Dispatched outbound webhook event to n8n/Zendesk for ${senderPhone}`);
         }
 
         if (data.bot_reply) {
           const botBubble = document.createElement("div");
           botBubble.className = "msg-bubble msg-bot";
-          botBubble.innerHTML = `${data.bot_reply.replace(/\n/g, '<br>')}<div class="msg-time">${now}</div>`;
+
+          let buttonsHtml = "";
+          if (data.buttons && data.buttons.length > 0) {
+            buttonsHtml = `<div class="interactive-buttons-container">` +
+              data.buttons.map(b => `<button class="wa-btn" onclick="sendInteractive('${b.id}', '${b.title.replace(/'/g, "\\'")}')">${b.title}</button>`).join('') +
+              `</div>`;
+          }
+
+          botBubble.innerHTML = `${data.bot_reply.replace(/\n/g, '<br>')}${buttonsHtml}<div class="msg-time">${now}</div>`;
           chatMessages.appendChild(botBubble);
           chatMessages.scrollTop = chatMessages.scrollHeight;
           appendLog("DISPATCH", "tag-green", `Outbound WhatsApp message delivered successfully.`);
@@ -543,8 +574,9 @@
     }
 
     async function resolveEscalation() {
+      const senderPhone = getSenderPhone();
       try {
-        await fetch(`/demo/resolve/${SENDER_PHONE}`, { method: "POST" });
+        await fetch(`/demo/resolve/${senderPhone}`, { method: "POST" });
         document.getElementById("valState").innerText = "ACTIVE_BOT";
         document.getElementById("valState").className = "metric-value badge-active";
         document.getElementById("botStatusText").innerText = "● Online (Bot Active)";
@@ -553,7 +585,7 @@
         document.getElementById("operatorTitle").innerText = "Support Operator Station";
         document.getElementById("operatorDesc").innerText = "Bot is currently handling all incoming inquiries automatically.";
         document.getElementById("btnResolve").style.display = "none";
-        appendLog("OPERATOR", "tag-green", `Human agent resolved session. Bot unmuted for ${SENDER_PHONE}.`);
+        appendLog("OPERATOR", "tag-green", `Human agent resolved session. Bot unmuted for ${senderPhone}.`);
       } catch (err) {
         appendLog("ERROR", "tag-amber", `Failed to resolve escalation: ${err}`);
       }

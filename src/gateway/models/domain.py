@@ -39,9 +39,17 @@ class OrderRecord(BaseModel):
     order_date: str
 
 
+class InteractiveButton(BaseModel):
+    id: str = Field(description="Unique action payload identifier, e.g. btn_track")
+    title: str = Field(description="Button label text, max 20 characters")
+
+
 class SessionRecord(BaseModel):
     phone_number: str
     status: SessionStatus = SessionStatus.ACTIVE_BOT
     transcript: list[dict[str, str]] = Field(default_factory=list)
     last_interaction_ts: float
     escalation_reason: str | None = None
+    last_referenced_order_id: str | None = None
+    pending_verification_order_id: str | None = None
+    verified_order_ids: list[str] = Field(default_factory=list)
