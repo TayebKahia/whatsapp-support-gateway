@@ -128,3 +128,11 @@ class MetaCloudAPIAdapter:
             "document": doc_payload,
         }
         return await self._post_with_retry(payload)
+
+    async def mark_read(self, wamid: str) -> bool:
+        payload = {
+            "messaging_product": "whatsapp",
+            "status": "read",
+            "message_id": wamid,
+        }
+        return await self._post_with_retry(payload)

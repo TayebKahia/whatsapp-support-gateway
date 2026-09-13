@@ -361,6 +361,109 @@
     }
     .btn-resolve:hover { opacity: 0.9; }
 
+    /* WHATSAPP TYPING INDICATOR */
+    .typing-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 14px;
+      background: var(--wa-incoming);
+      border-radius: 10px;
+      border-bottom-left-radius: 2px;
+      width: fit-content;
+      margin-bottom: 6px;
+    }
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: #8696a0;
+      border-radius: 50%;
+      animation: typingPulse 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    .typing-dot:nth-child(3) { animation-delay: 0s; }
+    @keyframes typingPulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .ticks-blue {
+      color: #53bdeb !important;
+      font-weight: 700;
+    }
+
+    /* OPERATOR LIVE CHAT STATION */
+    .operator-card.escalated {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+    .operator-chat-box {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .op-chat-feed {
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.82rem;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 6px;
+      padding: 8px;
+    }
+    .op-msg-line {
+      padding: 5px 10px;
+      border-radius: 6px;
+      max-width: 88%;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    .op-msg-customer {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      align-self: flex-start;
+    }
+    .op-msg-agent {
+      background: rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      align-self: flex-end;
+    }
+    .op-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .op-input {
+      flex: 1;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .op-input:focus { border-color: var(--accent-blue); }
+    .op-send-btn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .op-send-btn:hover { background: #1d4ed8; }
+
     .console-section {
       background: var(--panel-bg);
       border: 1px solid var(--border);
@@ -487,11 +590,26 @@
 
       <!-- OPERATOR CONSOLE / HUMAN ESCALATION CARD -->
       <div class="operator-card" id="operatorCard">
-        <div class="operator-info">
-          <h4 id="operatorTitle">Support Operator Station</h4>
-          <p id="operatorDesc">Bot is currently handling all incoming inquiries automatically.</p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+          <div class="operator-info">
+            <h4 id="operatorTitle">Support Operator Station</h4>
+            <p id="operatorDesc">Bot is currently handling all incoming inquiries automatically.</p>
+          </div>
+          <button class="btn-resolve" id="btnResolve" style="display: none;" onclick="resolveEscalation()">Unmute Bot / Resolve</button>
         </div>
-        <button class="btn-resolve" id="btnResolve" style="display: none;" onclick="resolveEscalation()">Unmute Bot / Resolve</button>
+        <div id="operatorChatContainer" class="operator-chat-box" style="display: none; width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8;">
+            <span id="wsStatusBadge">🔴 Connecting to live WebSocket...</span>
+            <span style="font-family: 'JetBrains Mono', monospace;">Operator: Agent Sarah</span>
+          </div>
+          <div class="op-chat-feed" id="opChatFeed">
+            <div style="color: #64748b; font-style: italic; font-size: 0.75rem;">Waiting for customer messages...</div>
+          </div>
+          <div class="op-input-row">
+            <input type="text" id="opInput" class="op-input" placeholder="Type direct reply to customer on WhatsApp..." onkeydown="if(event.key==='Enter') sendOperatorMessage()">
+            <button class="op-send-btn" onclick="sendOperatorMessage()">Send as Agent</button>
+          </div>
+        </div>
       </div>
 
       <!-- LIVE ENGINE LOG -->
@@ -510,6 +628,9 @@
   </div>
 
   <script>
+    let msgCounter = 0;
+    let operatorWs = null;
+
     function getSenderPhone() {
       const input = document.getElementById("phoneInput");
       return (input && input.value.trim()) || "15551234567";
@@ -523,6 +644,11 @@
       line.innerHTML = `<span class="log-ts">[${ts}]</span> <span class="log-tag ${tagClass}">[${tag}]</span> ${text}`;
       consoleLog.appendChild(line);
       consoleLog.scrollTop = consoleLog.scrollHeight;
+
+      const countEl = document.getElementById("logCount");
+      if (countEl) {
+        countEl.innerText = `${consoleLog.children.length} events`;
+      }
     }
 
     function sendPrompt(text) {
@@ -534,6 +660,90 @@
       sendMessage(title, id);
     }
 
+    function connectOperatorWs(phone) {
+      if (operatorWs && operatorWs.readyState === WebSocket.OPEN) {
+        return;
+      }
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws/operator/${encodeURIComponent(phone)}`;
+
+      try {
+        operatorWs = new WebSocket(wsUrl);
+
+        operatorWs.onopen = () => {
+          const badge = document.getElementById("wsStatusBadge");
+          if (badge) {
+            badge.innerHTML = "🟢 Live WebSocket Connected";
+            badge.style.color = "#4ade80";
+          }
+          appendLog("WEBSOCKET", "tag-green", `Operator connected to /ws/operator/${phone}`);
+        };
+
+        operatorWs.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "operator_message") {
+              appendOperatorFeed("agent", data.text);
+              appendAgentPhoneBubble(data.text);
+            } else if (data.role === "customer" || data.type === "message") {
+              appendOperatorFeed("customer", data.text);
+              appendLog("OPERATOR", "tag-blue", `Customer message routed to operator station: "${data.text}"`);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        };
+
+        operatorWs.onclose = () => {
+          const badge = document.getElementById("wsStatusBadge");
+          if (badge) {
+            badge.innerHTML = "⚪ WebSocket Disconnected";
+            badge.style.color = "#94a3b8";
+          }
+        };
+      } catch (err) {
+        console.error("Failed to connect operator WebSocket", err);
+      }
+    }
+
+    function appendOperatorFeed(role, text) {
+      const feed = document.getElementById("opChatFeed");
+      if (!feed) return;
+      const line = document.createElement("div");
+      line.className = `op-msg-line ${role === 'agent' ? 'op-msg-agent' : 'op-msg-customer'}`;
+      const prefix = role === "agent" ? "👤 Sarah (You): " : "📱 Customer: ";
+      line.innerText = prefix + text;
+      feed.appendChild(line);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function appendAgentPhoneBubble(text) {
+      const chatMessages = document.getElementById("chatMessages");
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble msg-bot";
+      bubble.innerHTML = `
+        <div style="font-size:0.7rem; color:#60a5fa; margin-bottom:2px; font-weight:600;">👤 Agent Sarah (Live Support)</div>
+        ${text.replace(/\n/g, '<br>')}
+        <div class="msg-time">${now}</div>
+      `;
+      chatMessages.appendChild(bubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      appendLog("DISPATCH", "tag-green", `Delivered live operator message to WhatsApp customer.`);
+    }
+
+    function sendOperatorMessage() {
+      const input = document.getElementById("opInput");
+      const text = input.value.trim();
+      if (!text) return;
+      if (!operatorWs || operatorWs.readyState !== WebSocket.OPEN) {
+        appendLog("ERROR", "tag-amber", "Operator WebSocket is not connected.");
+        return;
+      }
+      operatorWs.send(JSON.stringify({ text }));
+      input.value = "";
+    }
+
     async function sendMessage(textOverride = null, interactiveId = null) {
       const input = document.getElementById("chatInput");
       const text = textOverride !== null ? textOverride.trim() : input.value.trim();
@@ -543,14 +753,16 @@
         input.value = "";
       }
 
+      msgCounter++;
+      const curMsgId = msgCounter;
       const senderPhone = getSenderPhone();
       const chatMessages = document.getElementById("chatMessages");
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      // Append user bubble
+      // Append user bubble with initial grey double ticks
       const userBubble = document.createElement("div");
       userBubble.className = "msg-bubble msg-user";
-      userBubble.innerHTML = `${text}<div class="msg-time">${now} ✓✓</div>`;
+      userBubble.innerHTML = `${text}<div class="msg-time">${now} <span id="ticks_${curMsgId}" style="color:#8696a0">✓✓</span></div>`;
       chatMessages.appendChild(userBubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -559,6 +771,19 @@
       } else {
         appendLog("INBOUND", "tag-blue", `POST /webhook received from ${senderPhone}: "${text}"`);
       }
+
+      // Show realistic WhatsApp typing indicator
+      const typingEl = document.createElement("div");
+      typingEl.id = `typing_${curMsgId}`;
+      typingEl.className = "typing-bubble";
+      typingEl.innerHTML = `<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>`;
+      chatMessages.appendChild(typingEl);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      const botStatus = document.getElementById("botStatusText");
+      const prevStatus = botStatus.innerText;
+      botStatus.innerText = "typing...";
+      botStatus.style.color = "var(--wa-emerald)";
 
       try {
         const response = await fetch("/demo/send", {
@@ -573,6 +798,18 @@
 
         const data = await response.json();
 
+        // Remove typing indicator
+        if (typingEl.parentNode) {
+          typingEl.parentNode.removeChild(typingEl);
+        }
+
+        // WhatsApp Read Receipt: Update ticks to bright blue
+        const tickEl = document.getElementById(`ticks_${curMsgId}`);
+        if (tickEl) {
+          tickEl.className = "ticks-blue";
+        }
+        appendLog("RECEIPT", "tag-green", `Marked message as READ (status: "read", blue ticks acknowledged)`);
+
         // Update metrics
         document.getElementById("valLatency").innerHTML = `${Math.round(data.latency_ms)} <span class="metric-unit">ms</span>`;
         document.getElementById("valIntent").innerText = data.intent;
@@ -583,13 +820,18 @@
 
         if (data.session_status === "ESCALATED_HUMAN") {
           document.getElementById("valState").className = "metric-value badge-escalated";
-          document.getElementById("botStatusText").innerText = "● Muted (Human Escalated)";
-          document.getElementById("botStatusText").style.color = "var(--accent-amber)";
+          botStatus.innerText = "● Muted (Human Escalated)";
+          botStatus.style.color = "var(--accent-amber)";
           document.getElementById("operatorCard").className = "operator-card escalated";
           document.getElementById("operatorTitle").innerText = "🚨 Escalation Alert: Human Agent Needed";
-          document.getElementById("operatorDesc").innerText = `Session marked ESCALATED_HUMAN. Bot auto-replies are muted.`;
+          document.getElementById("operatorDesc").innerText = `Session marked ESCALATED_HUMAN. Bot replies are muted. Connect with customer below:`;
           document.getElementById("btnResolve").style.display = "block";
+          document.getElementById("operatorChatContainer").style.display = "flex";
+          connectOperatorWs(senderPhone);
           appendLog("ESCALATION", "tag-amber", `Dispatched outbound webhook event to n8n/Zendesk for ${senderPhone}`);
+        } else {
+          botStatus.innerText = "● Online (Bot Active)";
+          botStatus.style.color = "var(--wa-emerald)";
         }
 
         if (data.bot_reply) {
@@ -623,9 +865,13 @@
           chatMessages.scrollTop = chatMessages.scrollHeight;
           appendLog("DISPATCH", "tag-green", `Outbound WhatsApp message delivered successfully.`);
         } else if (data.bot_muted) {
-          appendLog("MUTED", "tag-amber", `Message recorded in transcript. Zero reply dispatched (bot is muted).`);
+          appendLog("MUTED", "tag-amber", `Message recorded in transcript. Bot reply muted -> Routed to Operator Live Console.`);
         }
       } catch (err) {
+        if (typingEl.parentNode) {
+          typingEl.parentNode.removeChild(typingEl);
+        }
+        botStatus.innerText = prevStatus;
         appendLog("ERROR", "tag-amber", `Failed to send message: ${err}`);
       }
     }
@@ -634,6 +880,10 @@
       const senderPhone = getSenderPhone();
       try {
         await fetch(`/demo/resolve/${senderPhone}`, { method: "POST" });
+        if (operatorWs) {
+          operatorWs.close();
+          operatorWs = null;
+        }
         document.getElementById("valState").innerText = "ACTIVE_BOT";
         document.getElementById("valState").className = "metric-value badge-active";
         document.getElementById("botStatusText").innerText = "● Online (Bot Active)";
@@ -642,6 +892,7 @@
         document.getElementById("operatorTitle").innerText = "Support Operator Station";
         document.getElementById("operatorDesc").innerText = "Bot is currently handling all incoming inquiries automatically.";
         document.getElementById("btnResolve").style.display = "none";
+        document.getElementById("operatorChatContainer").style.display = "none";
         appendLog("OPERATOR", "tag-green", `Human agent resolved session. Bot unmuted for ${senderPhone}.`);
       } catch (err) {
         appendLog("ERROR", "tag-amber", `Failed to resolve escalation: ${err}`);

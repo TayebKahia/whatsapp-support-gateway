@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from gateway.api.demo import create_demo_router
 from gateway.api.media import create_media_router
 from gateway.api.webhook import create_webhook_router
+from gateway.api.websocket import OperatorConnectionManager, create_websocket_router
 from gateway.channel.base import WhatsAppChannelPort
 from gateway.channel.meta import MetaCloudAPIAdapter
 from gateway.channel.mock import MockWhatsAppAdapter
@@ -15,6 +16,7 @@ from gateway.engine.processor import MessageProcessor
 from gateway.events.dispatcher import OutboundEventDispatcher
 from gateway.queue.base import QueuePort
 from gateway.queue.in_process import InProcessAsyncQueue
+from gateway.queue.redis_stream import RedisStreamQueue
 from gateway.repository.idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from gateway.repository.order import InMemoryOrderRepository, OrderRepository
 from gateway.repository.session import InMemorySessionStore, SessionStore
@@ -28,10 +30,24 @@ def create_app(
     channel: WhatsAppChannelPort | None = None,
     order_repo: OrderRepository | None = None,
     session_store: SessionStore | None = None,
+    operator_manager: OperatorConnectionManager | None = None,
 ) -> FastAPI:
     cfg = app_settings or global_settings
     idem_store = idempotency_store or InMemoryIdempotencyStore()
-    msg_queue = queue or InProcessAsyncQueue()
+
+    # Determine message queue based on configuration
+    msg_queue: QueuePort
+    if queue is not None:
+        msg_queue = queue
+    elif cfg.queue_type == "redis":
+        msg_queue = RedisStreamQueue(
+            redis_url=cfg.redis_url,
+            stream_key=cfg.redis_stream_key,
+            consumer_group=cfg.redis_consumer_group,
+            consumer_name=cfg.redis_consumer_name,
+        )
+    else:
+        msg_queue = InProcessAsyncQueue()
 
     # Determine order repository based on configuration
     repo: OrderRepository
@@ -69,11 +85,14 @@ def create_app(
     if cfg.integration_webhook_url:
         dispatcher = OutboundEventDispatcher(webhook_url=str(cfg.integration_webhook_url))
 
+    op_mgr = operator_manager or OperatorConnectionManager()
+
     processor = MessageProcessor(
         channel=active_channel,
         order_repo=repo,
         session_store=store,
         on_escalation=dispatcher.dispatch_escalation if dispatcher else None,
+        on_operator_broadcast=op_mgr.broadcast_to_phone,
     )
 
     @asynccontextmanager
@@ -98,6 +117,14 @@ def create_app(
         queue=msg_queue,
     )
     app.include_router(webhook_router)
+
+    # Real-time WebSocket Human Operator Router
+    ws_router = create_websocket_router(
+        manager=op_mgr,
+        channel=active_channel,
+        session_store=store,
+    )
+    app.include_router(ws_router)
 
     # Embedded Dual-Pane Simulator & Cockpit Router
     demo_router = create_demo_router(

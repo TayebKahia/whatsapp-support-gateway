@@ -2,7 +2,7 @@
 
 > **Commercial-Grade E-Commerce Customer Support Automation with Sub-30ms Webhook Acknowledgment, WAMID Idempotency, and Stateful Human Escalation.**
 
-[![Tests](https://img.shields.io/badge/tests-64%20passed-brightgreen.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/tests)
+[![Tests](https://img.shields.io/badge/tests-94%20passed-brightgreen.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/tests)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
 [![Pydantic](https://img.shields.io/badge/Pydantic-V2-e92063.svg)](https://docs.pydantic.dev/)
@@ -16,10 +16,14 @@ E-commerce businesses losing customer orders over slow WhatsApp response times f
 1. **The Webhook Retry Storm**: LLMs or slow database queries take $> 3$ seconds to answer. Meta Cloud API times out and retries the webhook, triggering infinite duplicate messages and wasted compute costs.
 2. **The Unguarded Chatbot**: Unconstrained prompt wrappers hallucinate delivery dates, fail on return policies, or argue with angry customers without human intervention.
 
-The **WhatsApp Support Gateway** solves both problems:
+The **WhatsApp Support Gateway** solves both problems with an enterprise architecture:
 - **Sub-30ms Ingestion Decoupling**: Validates HMAC-SHA256 signatures, deduplicates via WhatsApp Message ID (`WAMID`), enqueues messages asynchronously, and returns `HTTP 200 OK` in under 30ms.
-- **Bounded Tool-Calling Agent**: Strictly constrained to typed Pydantic V2 schemas for order tracking (`#ORD-1001`) and return eligibility evaluation.
-- **Stateful Human Escalation**: Automatically mutes bot automation when a customer requests human help or escalates, while logging conversation transcripts and emitting webhook events to **n8n / Zapier / Slack**.
+- **Distributed Redis Streams**: Horizontal worker pool scaling across container replicas via Redis Streams and Consumer Groups (`XADD`, `XREADGROUP`, `XACK`).
+- **Real-Time 2-Way WebSocket Human Chat**: Operator console (`/ws/operator/{phone}`) enabling live agent takeover, two-way WhatsApp chat dispatch, and customer message broadcasting.
+- **WhatsApp Read Receipts & Typing Indicators**: Instant `status: "read"` Graph API signals (blue ticks) and realistic typing bubble animations.
+- **Programmatic PDF Return Labels**: Vector shipping labels & RMA packing slips generated via `reportlab` with scannable Code128 barcodes served dynamically.
+- **Multi-Backend E-Commerce Ports**: Swappable order repositories including `ShopifyOrderAdapter` (Shopify Admin REST API + offline fixtures) and `InMemoryOrderRepository`.
+- **Anti-IDOR Security Challenge**: 4-digit phone verification challenge preventing unauthorized cross-customer order queries.
 - **Zero-Credential Interactive Cockpit**: Features an embedded dual-pane web simulator (`/demo`) with an authentic WhatsApp phone mockup on the left and a live engine telemetry console on the right.
 
 ---
@@ -198,8 +202,8 @@ To solve this, I architect WhatsApp support gateways using an asynchronous inges
 
 I have already built and containerized a live, tested reference implementation matching this exact architecture:
 - GitHub: [Your Portfolio Link]
-- Stack: Python (FastAPI), Meta Graph API v20.0+, Pydantic V2, SQLite/Redis, Docker.
-- Test Coverage: 64 automated unit & integration tests covering HMAC signature verification, WAMID deduplication, and stateful human escalation.
+- Stack: Python (FastAPI), Meta Graph API v20.0+, Pydantic V2, Redis Streams, WebSocket Human Takeover, ReportLab PDF, Docker.
+- Test Coverage: 94 automated unit & integration tests covering HMAC signature verification, WAMID deduplication, Redis streams, real-time WebSockets, and stateful human escalation.
 
 I can have your WhatsApp API integration, automated order routing, and helpdesk handoff operational in days. 
 

@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     shopify_store_url: str | None = None
     shopify_access_token: str | None = None
 
+    # Asynchronous Message Queue
+    queue_type: Literal["in_process", "redis"] = "in_process"
+    redis_url: str = "redis://localhost:6379/0"
+    redis_stream_key: str = "whatsapp:events"
+    redis_consumer_group: str = "gateway_workers"
+    redis_consumer_name: str = "worker-1"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

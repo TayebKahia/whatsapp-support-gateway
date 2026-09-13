@@ -13,11 +13,34 @@ services:
       - ENVIRONMENT=development
       - WHATSAPP_PROVIDER=mock
       - LLM_PROVIDER=mock
+      - QUEUE_TYPE=redis
+      - REDIS_URL=redis://redis:6379/0
       - META_APP_SECRET=dev_app_secret
       - WEBHOOK_VERIFY_TOKEN=dev_verify_token
       - INTEGRATION_WEBHOOK_URL=http://n8n:5678/webhook/escalation
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp-gateway-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

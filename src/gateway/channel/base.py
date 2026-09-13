@@ -25,3 +25,9 @@ class WhatsAppChannelPort(Protocol):
         Send a media document (e.g. PDF shipping label or invoice).
         """
         ...
+
+    async def mark_read(self, wamid: str) -> bool:
+        """
+        Mark an incoming message as read (two blue ticks in WhatsApp).
+        """
+        ...

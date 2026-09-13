@@ -13,6 +13,7 @@ from gateway.repository.session import SessionStore
 logger = logging.getLogger(__name__)
 
 EscalationCallback = Callable[[SessionRecord, str], Awaitable[Any]]
+OperatorMessageCallback = Callable[[str, dict[str, Any]], Awaitable[None]]
 
 
 class MessageProcessor:
@@ -27,6 +28,7 @@ class MessageProcessor:
         agent: BoundedToolAgent | None = None,
         state_machine: SessionStateMachine | None = None,
         on_escalation: EscalationCallback | None = None,
+        on_operator_broadcast: OperatorMessageCallback | None = None,
     ) -> None:
         self.channel = channel
         self.order_repo = order_repo
@@ -35,17 +37,32 @@ class MessageProcessor:
         self.agent = agent or BoundedToolAgent(order_repo)
         self.state_machine = state_machine or SessionStateMachine()
         self.on_escalation = on_escalation
+        self.on_operator_broadcast = on_operator_broadcast
 
     async def process_event(self, event: InboundMessageEvent) -> None:
         phone = event.sender_phone
         session = self.session_store.get_session(phone)
 
-        # 1. Always append inbound message to customer transcript
+        # 1. Immediately mark message as read (blue double ticks in WhatsApp)
+        try:
+            await self.channel.mark_read(event.wamid)
+        except (RuntimeError, ConnectionResetError, OSError, ValueError, TimeoutError):
+            logger.warning("Failed to mark message %s as read", event.wamid)
+
+        # 2. Always append inbound message to customer transcript
         self.session_store.append_transcript(phone, role="user", message=event.body)
 
-        # 2. Strict Muting Rule: If session is escalated to a human, suppress automated replies
+        # 3. Strict Muting Rule: If session is escalated to a human, suppress automated replies
         if not self.state_machine.can_auto_reply(session):
             logger.info("Session %s is ESCALATED_HUMAN. Automated bot reply suppressed.", phone)
+            if self.on_operator_broadcast:
+                try:
+                    await self.on_operator_broadcast(
+                        phone,
+                        {"role": "customer", "text": event.body, "wamid": event.wamid},
+                    )
+                except Exception:
+                    logger.exception("Failed to broadcast customer message to operator WebSockets")
             return
 
         # 3. Classify intent

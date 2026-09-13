@@ -6,6 +6,7 @@ class MockWhatsAppAdapter:
 
     def __init__(self) -> None:
         self.sent_messages: list[dict[str, Any]] = []
+        self.read_wamids: list[str] = []
 
     async def send_text(self, to_phone: str, body: str) -> bool:
         self.sent_messages.append(
@@ -44,5 +45,10 @@ class MockWhatsAppAdapter:
         )
         return True
 
+    async def mark_read(self, wamid: str) -> bool:
+        self.read_wamids.append(wamid)
+        return True
+
     def clear(self) -> None:
         self.sent_messages.clear()
+        self.read_wamids.clear()
