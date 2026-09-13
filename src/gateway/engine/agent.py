@@ -124,15 +124,15 @@ class BoundedToolAgent:
 
     async def verify_order_ownership(
         self, verification_input: str, session: SessionRecord
-    ) -> tuple[str, list[dict[str, str]] | None, bool]:
+    ) -> tuple[str, list[dict[str, str]] | None, bool, dict[str, str] | None]:
         order_id = session.pending_verification_order_id
         if not order_id:
-            return ("No pending verification found. How can I help you?", None, False)
+            return ("No pending verification found. How can I help you?", None, False, None)
 
         order = self.order_repo.get_order(order_id)
         if not order:
             session.pending_verification_order_id = None
-            return (f"Order *{order_id}* was not found in our records.", None, False)
+            return (f"Order *{order_id}* was not found in our records.", None, False, None)
 
         clean_digits = re.sub(r"\D", "", verification_input)
         customer_digits = _normalize_phone(order.customer_phone)
@@ -143,15 +143,38 @@ class BoundedToolAgent:
                 session.verified_order_ids.append(order.order_id)
             session.last_referenced_order_id = order.order_id
 
+            # If this is a delivered order, approve return and provide PDF label
+            if order.status.value == "DELIVERED":
+                result = self.order_repo.evaluate_return(
+                    order.order_id, reason="Customer return request"
+                )
+                if result.get("eligible"):
+                    buttons = [
+                        {"id": "btn_track", "title": "Track Order"},
+                        {"id": "btn_human", "title": "Talk to Human"},
+                        {"id": "btn_menu", "title": "Main Menu"},
+                    ]
+                    doc_payload = {
+                        "document_url": f"/media/return-labels/{order.order_id}.pdf",
+                        "filename": f"return_label_{order.order_id}.pdf",
+                        "caption": f"📄 Prepaid Return Label for #{order.order_id}",
+                    }
+                    full_reply = (
+                        f"✅ *Security Verification Successful!*\n\n"
+                        f"✅ *Return Approved for #{order.order_id}*\n\n"
+                        f"{result['instructions']}"
+                    )
+                    return full_reply, buttons, True, doc_payload
+
             reply, buttons = self._build_order_status_reply(order)
             full_reply = f"✅ *Security Verification Successful!*\n\n{reply}"
-            return full_reply, buttons, True
+            return full_reply, buttons, True, None
 
         fail_msg = (
             f"❌ Verification failed. The digits provided did not match our records for order *#{order.order_id}*. "
             "Please verify the last 4 digits and try again, or type *human* to speak with our support team."
         )
-        return fail_msg, None, False
+        return fail_msg, None, False, None
 
     async def handle_return_query(
         self,

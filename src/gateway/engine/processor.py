@@ -74,11 +74,22 @@ class MessageProcessor:
             Intent.HUMAN_ESCALATION,
             Intent.MENU,
         ):
-            reply, buttons, _ = await self.agent.verify_order_ownership(event.body, session)
+            reply, buttons, _, document = await self.agent.verify_order_ownership(
+                event.body, session
+            )
             if buttons:
                 await self.channel.send_interactive_buttons(phone, reply, buttons)
             else:
                 await self.channel.send_text(phone, reply)
+
+            if document:
+                await self.channel.send_document(
+                    phone,
+                    document_url=document["document_url"],
+                    filename=document["filename"],
+                    caption=document.get("caption"),
+                )
+
             self.session_store.append_transcript(phone, role="assistant", message=reply)
             self.session_store.save_session(session)
             return

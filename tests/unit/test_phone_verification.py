@@ -58,7 +58,7 @@ async def test_verify_order_ownership_success_with_last_4_digits() -> None:
     )
 
     # ORD-1001 customer_phone is "15551234567", so last 4 digits are "4567"
-    reply, buttons, verified = await agent.verify_order_ownership("4567", session)
+    reply, buttons, verified, _ = await agent.verify_order_ownership("4567", session)
 
     assert verified is True
     assert "ORD-1001" in reply
@@ -79,7 +79,7 @@ async def test_verify_order_ownership_failure_with_wrong_digits() -> None:
         pending_verification_order_id="ORD-1001",
     )
 
-    reply, _, verified = await agent.verify_order_ownership("0000", session)
+    reply, _, verified, _ = await agent.verify_order_ownership("0000", session)
 
     assert verified is False
     assert "SHIPPED" not in reply
