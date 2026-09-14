@@ -521,7 +521,12 @@
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
           <span style="font-size: 0.8rem; color: var(--text-muted);">Simulated Phone:</span>
-          <input type="text" id="phoneInput" value="15551234567" style="background:#1f293d; color:#25D366; border:1px solid #2d3748; border-radius:6px; padding:3px 8px; font-size:0.8rem; width:130px; font-family:'JetBrains Mono',monospace;">
+          <input type="text" id="phoneInput" value="15551234567" style="background:#1f293d; color:#25D366; border:1px solid #2d3748; border-radius:6px; padding:3px 8px; font-size:0.8rem; width:120px; font-family:'JetBrains Mono',monospace;">
+          <select id="presetSelect" onchange="document.getElementById('phoneInput').value=this.value; resetSession();" style="background:#1f293d; color:#93c5fd; border:1px solid #2d3748; border-radius:6px; padding:3px 6px; font-size:0.75rem; cursor:pointer;">
+            <option value="15551234567">Single Order (ORD-1001)</option>
+            <option value="15557778899">Multi-Package (2 Orders)</option>
+            <option value="15550000000">New Customer (0 Orders)</option>
+          </select>
         </div>
         <button onclick="resetSession()" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">🔄 Reset Session</button>
       </div>
@@ -561,6 +566,7 @@
           <span class="chip" onclick="sendPrompt('2233')">6. Verify: 2233 (Get PDF)</span>
           <span class="chip" onclick="sendPrompt('Track Shopify 1001')">7. Shopify #1001</span>
           <span class="chip" onclick="sendPrompt('human')">8. Talk to Human</span>
+          <span class="chip" style="background: rgba(147, 51, 234, 0.15); border-color: rgba(147, 51, 234, 0.4); color: #c084fc;" onclick="document.getElementById('phoneInput').value='15557778899'; document.getElementById('presetSelect').value='15557778899'; resetSession(); setTimeout(() => sendInteractive('btn_track', 'Track Order'), 350);">📦 Demo: Multi-Package</span>
           <span class="chip" onclick="sendPrompt('menu')">Menu</span>
         </div>
 
