@@ -47,6 +47,17 @@ def create_demo_router(
         content = HTML_PATH.read_text(encoding="utf-8")
         return Response(content=content, media_type="text/html", status_code=status.HTTP_200_OK)
 
+    @router.get("/demo-script.pdf")
+    async def serve_demo_script_pdf() -> Response:
+        script_pdf = Path(__file__).parent.parent / "static" / "demo_script.pdf"
+        if not script_pdf.exists():
+            raise HTTPException(status_code=404, detail="Demo script PDF not found")
+        return Response(
+            content=script_pdf.read_bytes(),
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'inline; filename="DEMO_RECORDING_SCRIPT.pdf"'},
+        )
+
     @router.post("/demo/send")
     async def handle_demo_send(req: DemoSendMessageRequest) -> dict[str, Any]:
         start = time.perf_counter()
