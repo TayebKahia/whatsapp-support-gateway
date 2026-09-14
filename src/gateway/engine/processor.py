@@ -72,9 +72,15 @@ class MessageProcessor:
         # 4. Check for active security verification challenge
         if session.pending_verification_order_id:
             clean_body = event.body.strip().lower()
-            extracted_new_order = self.agent.extract_order_id(event.body, session=None)
 
-            # Did customer switch to a different order? (e.g. "Where is ord 1001?")
+            # Did customer explicitly request a DIFFERENT order with "ord" / "order" / "#"?
+            # Bare digits like "6543" or "2233" are verification PINs, not order IDs.
+            has_order_keyword = any(kw in clean_body for kw in ("ord", "order", "#"))
+            extracted_new_order = (
+                self.agent.extract_order_id(event.body, session=None)
+                if has_order_keyword
+                else None
+            )
             is_different_order = (
                 extracted_new_order is not None
                 and extracted_new_order != session.pending_verification_order_id

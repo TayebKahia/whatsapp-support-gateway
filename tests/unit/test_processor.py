@@ -208,3 +208,50 @@ async def test_processor_generic_track_phone_lookup() -> None:
     reply = channel.sent_messages[0]["body"]
     assert "ORD-1001" in reply
     assert "FedEx" in reply
+
+
+@pytest.mark.asyncio
+async def test_processor_security_challenge_and_pin_resolution() -> None:
+    channel = MockWhatsAppAdapter()
+    order_repo = InMemoryOrderRepository()
+    session_store = InMemorySessionStore()
+    processor = MessageProcessor(
+        channel=channel,
+        order_repo=order_repo,
+        session_store=session_store,
+    )
+    phone = "15551234567"
+
+    # Step 1: User asks for ORD-1002 (which belongs to 15559876543)
+    await processor.process_event(
+        InboundMessageEvent(
+            wamid="wamid.SEC001",
+            sender_phone=phone,
+            body="Where is ORD-1002?",
+            timestamp="1725900000",
+        )
+    )
+    assert len(channel.sent_messages) == 1
+    reply1 = channel.sent_messages[0]["body"]
+    assert "Security Verification Required" in reply1
+    assert "ORD-1002" in reply1
+
+    # Step 2: User replies with bare 4 digits "6543"
+    channel.clear()
+    await processor.process_event(
+        InboundMessageEvent(
+            wamid="wamid.SEC002",
+            sender_phone=phone,
+            body="6543",
+            timestamp="1725900010",
+        )
+    )
+    assert len(channel.sent_messages) == 1
+    reply2 = channel.sent_messages[0]["body"]
+    assert "Security Verification Successful" in reply2
+    assert "ORD-1002" in reply2
+    assert "PROCESSING" in reply2
+
+    # Session is no longer pending verification
+    session = session_store.get_session(phone)
+    assert session.pending_verification_order_id is None
