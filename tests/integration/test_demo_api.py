@@ -104,3 +104,28 @@ async def test_demo_return_delivers_document_and_media_route() -> None:
         assert pdf_resp.status_code == 200
         assert "application/pdf" in pdf_resp.headers["Content-Type"]
         assert pdf_resp.content.startswith(b"%PDF-")
+
+
+@pytest.mark.asyncio
+async def test_demo_reset_session() -> None:
+    app = create_app()
+    transport = ASGITransport(app=app)
+    phone = "15553334444"
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Step 1: Send a message to populate session transcript
+        await client.post(
+            "/demo/send",
+            json={"phone_number": phone, "message": "Where is ORD-1001?"},
+        )
+        sess_resp = await client.get(f"/demo/session/{phone}")
+        assert sess_resp.status_code == 200
+        assert len(sess_resp.json()["transcript"]) > 0
+
+        # Step 2: Reset session
+        reset_resp = await client.post(f"/demo/reset/{phone}")
+        assert reset_resp.status_code == 200
+        assert reset_resp.json()["status"] == "reset"
+
+        # Step 3: Verify clean session
+        clean_resp = await client.get(f"/demo/session/{phone}")
+        assert len(clean_resp.json()["transcript"]) == 0

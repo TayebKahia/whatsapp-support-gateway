@@ -523,6 +523,7 @@
           <span style="font-size: 0.8rem; color: var(--text-muted);">Simulated Phone:</span>
           <input type="text" id="phoneInput" value="15551234567" style="background:#1f293d; color:#25D366; border:1px solid #2d3748; border-radius:6px; padding:3px 8px; font-size:0.8rem; width:130px; font-family:'JetBrains Mono',monospace;">
         </div>
+        <button onclick="resetSession()" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">🔄 Reset Session</button>
       </div>
   </header>
 
@@ -543,9 +544,9 @@
           <div class="msg-bubble msg-bot">
             Welcome to Customer Care! How can we assist you today?
             <div class="interactive-buttons-container">
-              <button class="wa-btn" onclick="sendPrompt('Where is my order #ORD-1001?')">📦 Track #ORD-1001</button>
-              <button class="wa-btn" onclick="sendPrompt('Can I return order ORD-1003?')">↩️ Return #ORD-1003</button>
-              <button class="wa-btn" onclick="sendPrompt('I need to speak to a human representative')">👤 Human Support</button>
+              <button class="wa-btn" onclick="sendInteractive('btn_track', 'Track Order')">📦 Track Order</button>
+              <button class="wa-btn" onclick="sendInteractive('btn_return', 'Return / Refund')">↩️ Return / Refund</button>
+              <button class="wa-btn" onclick="sendInteractive('btn_human', 'Talk to Human')">👤 Talk to Human</button>
             </div>
             <div class="msg-time">10:00 AM</div>
           </div>
@@ -899,6 +900,42 @@
         appendLog("OPERATOR", "tag-green", `Human agent resolved session. Bot unmuted for ${senderPhone}.`);
       } catch (err) {
         appendLog("ERROR", "tag-amber", `Failed to resolve escalation: ${err}`);
+      }
+    }
+
+    async function resetSession() {
+      const senderPhone = getSenderPhone();
+      try {
+        await fetch(`/demo/reset/${senderPhone}`, { method: "POST" });
+        if (operatorWs) {
+          operatorWs.close();
+          operatorWs = null;
+        }
+        const chatMessages = document.getElementById("chatMessages");
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        chatMessages.innerHTML = `
+          <div class="msg-bubble msg-bot">
+            Welcome to Customer Care! How can we assist you today?
+            <div class="interactive-buttons-container">
+              <button class="wa-btn" onclick="sendInteractive('btn_track', 'Track Order')">📦 Track Order</button>
+              <button class="wa-btn" onclick="sendInteractive('btn_return', 'Return / Refund')">↩️ Return / Refund</button>
+              <button class="wa-btn" onclick="sendInteractive('btn_human', 'Talk to Human')">👤 Talk to Human</button>
+            </div>
+            <div class="msg-time">${now}</div>
+          </div>
+        `;
+        document.getElementById("valState").innerText = "ACTIVE_BOT";
+        document.getElementById("valState").className = "metric-value badge-active";
+        document.getElementById("botStatusText").innerText = "● Online (Bot Active)";
+        document.getElementById("botStatusText").style.color = "var(--wa-emerald)";
+        document.getElementById("operatorCard").className = "operator-card";
+        document.getElementById("operatorTitle").innerText = "Support Operator Station";
+        document.getElementById("operatorDesc").innerText = "Bot is currently handling all incoming inquiries automatically.";
+        document.getElementById("btnResolve").style.display = "none";
+        document.getElementById("operatorChatContainer").style.display = "none";
+        appendLog("SYSTEM", "tag-amber", `Reset customer session for ${senderPhone}. Clean state restored.`);
+      } catch (err) {
+        appendLog("ERROR", "tag-amber", `Failed to reset session: ${err}`);
       }
     }
   </script>

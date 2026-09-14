@@ -76,3 +76,67 @@ async def test_tool_agent_lookup_order_flexible_phrasing() -> None:
     resp4, _, _ = await agent.handle_return_query("Return ord 1003")
     assert "ORD-1003" in resp4
     assert "eligible" in resp4.lower()
+
+
+@pytest.mark.asyncio
+async def test_tool_agent_phone_lookup_single_order() -> None:
+    order_repo = InMemoryOrderRepository()
+    agent = BoundedToolAgent(order_repo=order_repo)
+
+    reply, buttons = await agent.handle_order_query(
+        "Track Order",
+        sender_phone="15551234567",
+    )
+    assert "ORD-1001" in reply
+    assert "SHIPPED" in reply
+    assert buttons is not None
+
+
+@pytest.mark.asyncio
+async def test_tool_agent_phone_lookup_multiple_orders() -> None:
+    order_repo = InMemoryOrderRepository()
+    agent = BoundedToolAgent(order_repo=order_repo)
+
+    # 15557778899 has 2 orders: ORD-1004 and ORD-1005
+    reply, buttons = await agent.handle_order_query(
+        "Track Order",
+        sender_phone="15557778899",
+    )
+    assert "2 packages" in reply
+    assert "ORD-1004" in reply
+    assert "ORD-1005" in reply
+    assert buttons is not None
+    assert len(buttons) == 2
+    assert any(b["id"] == "track_ORD-1004" for b in buttons)
+    assert any(b["id"] == "track_ORD-1005" for b in buttons)
+
+
+@pytest.mark.asyncio
+async def test_tool_agent_phone_lookup_zero_orders() -> None:
+    order_repo = InMemoryOrderRepository()
+    agent = BoundedToolAgent(order_repo=order_repo)
+
+    reply, buttons = await agent.handle_order_query(
+        "Track Order",
+        sender_phone="15550000000",
+    )
+    assert "could not find any active orders" in reply.lower()
+    assert "order number" in reply.lower()
+    assert buttons is None
+
+
+@pytest.mark.asyncio
+async def test_tool_agent_phone_lookup_return_multiple_orders() -> None:
+    order_repo = InMemoryOrderRepository()
+    agent = BoundedToolAgent(order_repo=order_repo)
+
+    reply, buttons, doc = await agent.handle_return_query(
+        "Return / Refund",
+        sender_phone="15557778899",
+    )
+    assert "2 orders" in reply
+    assert "ORD-1004" in reply
+    assert "ORD-1005" in reply
+    assert buttons is not None
+    assert len(buttons) == 2
+    assert doc is None

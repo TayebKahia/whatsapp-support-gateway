@@ -59,11 +59,12 @@ async def test_multiturn_memory_tracking_followup() -> None:
 async def test_multiturn_memory_no_context_prompts_for_id() -> None:
     repo = InMemoryOrderRepository()
     agent = BoundedToolAgent(order_repo=repo)
-    session = SessionRecord(phone_number="15559876543", last_interaction_ts=1000.0)
+    # Customer with no orders on file asks ambiguous question
+    session = SessionRecord(phone_number="15550000000", last_interaction_ts=1000.0)
 
     reply, _ = await agent.handle_order_query(
         query="Where is it?",
-        sender_phone="15559876543",
+        sender_phone="15550000000",
         session=session,
     )
     assert "order number" in reply.lower()

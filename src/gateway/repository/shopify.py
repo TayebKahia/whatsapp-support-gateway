@@ -206,6 +206,15 @@ class ShopifyOrderAdapter:
         # In live mode:
         return self._fetch_live_order(digits)
 
+    def get_orders_by_customer_phone(self, phone: str) -> list[OrderRecord]:
+        clean_target = re.sub(r"\D", "", phone)
+        results: list[OrderRecord] = []
+        for fixture in self._sandbox_fixtures.values():
+            rec = self._parse_shopify_payload(fixture)
+            if re.sub(r"\D", "", rec.customer_phone) == clean_target:
+                results.append(rec)
+        return results
+
     def _fetch_live_order(self, digits: str) -> OrderRecord | None:
         if not self.shop_domain or not self.access_token:
             return None

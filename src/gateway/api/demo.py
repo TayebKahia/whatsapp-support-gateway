@@ -128,4 +128,9 @@ def create_demo_router(
         store.resolve_session(phone)
         return {"status": "resolved", "phone": phone}
 
+    @router.post("/demo/reset/{phone}")
+    async def reset_demo_session(phone: str) -> dict[str, str]:
+        store.reset_session(phone)
+        return {"status": "reset", "phone": phone}
+
     return router

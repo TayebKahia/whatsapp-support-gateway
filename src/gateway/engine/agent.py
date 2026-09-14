@@ -26,21 +26,33 @@ class BoundedToolAgent:
             digits = match.group(1) or match.group(2)
             return f"ORD-{digits}"
 
+        clean = text.strip().lower()
+
+        # General top-level actions should NOT be treated as pronoun referents
+        general_intents = {
+            "track",
+            "track order",
+            "track my order",
+            "where is my package",
+            "where is my order",
+            "return",
+            "refund",
+            "return / refund",
+            "return item",
+        }
+        if clean in general_intents:
+            return None
+
         # Contextual resolution: If pronoun/referent is used and session has an active order
         if session and session.last_referenced_order_id:
             context_keywords = [
                 "it",
                 "this",
                 "status",
-                "track",
                 "arrive",
                 "when",
-                "return",
-                "refund",
                 "package",
-                "order",
             ]
-            clean = text.lower()
             if any(k in clean for k in context_keywords):
                 return session.last_referenced_order_id
 
@@ -76,6 +88,51 @@ class BoundedToolAgent:
         session: SessionRecord | None = None,
     ) -> tuple[str, list[dict[str, str]] | None]:
         order_id = self.extract_order_id(query, session=session)
+
+        # Smart Phone Lookup: If no order ID was specified, check customer phone number
+        if not order_id and sender_phone:
+            customer_orders = self.order_repo.get_orders_by_customer_phone(sender_phone)
+            if len(customer_orders) == 1:
+                # Scenario A: Exactly 1 order linked to phone -> Instant zero-friction resolution!
+                matched_order = customer_orders[0]
+                if session:
+                    session.last_referenced_order_id = matched_order.order_id
+                    if matched_order.order_id not in session.verified_order_ids:
+                        session.verified_order_ids.append(matched_order.order_id)
+                reply, buttons = self._build_order_status_reply(matched_order)
+                return (
+                    f"📦 We found 1 active order for your phone number:\n\n{reply}",
+                    buttons,
+                )
+            elif len(customer_orders) > 1:
+                # Scenario B: Multiple packages linked to phone -> Interactive disambiguation!
+                buttons = [
+                    {"id": f"track_{o.order_id}", "title": f"📦 #{o.order_id}"}
+                    for o in customer_orders[:3]
+                ]
+                order_list_str = "\n".join(
+                    f"• *#{o.order_id}* ({', '.join(o.items) if o.items else 'Items'}) — {o.status.value}"
+                    for o in customer_orders
+                )
+                return (
+                    (
+                        f"📦 We found *{len(customer_orders)} packages* associated with your phone number:\n\n"
+                        f"{order_list_str}\n\n"
+                        "Which order would you like to track? Tap a button below or reply with the order number:"
+                    ),
+                    buttons,
+                )
+            else:
+                # Scenario C: 0 orders linked to phone -> Prompt for order number
+                return (
+                    (
+                        "We could not find any active orders associated with your WhatsApp number. "
+                        "If you placed your order under a different number or email, please reply with your order number "
+                        "(for example: *#ORD-1001*)."
+                    ),
+                    None,
+                )
+
         if not order_id:
             return (
                 (
@@ -170,6 +227,21 @@ class BoundedToolAgent:
             full_reply = f"✅ *Security Verification Successful!*\n\n{reply}"
             return full_reply, buttons, True, None
 
+        if len(clean_digits) < 4:
+            return (
+                (
+                    f"🔒 *Verification is pending for order #{order.order_id}*.\n"
+                    "Please reply with the *last 4 digits* of the phone number on file to proceed, "
+                    "or type *cancel* to return to the main menu."
+                ),
+                [
+                    {"id": "btn_menu", "title": "Main Menu"},
+                    {"id": "btn_human", "title": "Talk to Human"},
+                ],
+                False,
+                None,
+            )
+
         fail_msg = (
             f"❌ Verification failed. The digits provided did not match our records for order *#{order.order_id}*. "
             "Please verify the last 4 digits and try again, or type *human* to speak with our support team."
@@ -183,6 +255,42 @@ class BoundedToolAgent:
         session: SessionRecord | None = None,
     ) -> tuple[str, list[dict[str, str]] | None, dict[str, str] | None]:
         order_id = self.extract_order_id(query, session=session)
+
+        # Smart Phone Lookup: If no order ID was specified, check customer phone number
+        if not order_id and sender_phone:
+            customer_orders = self.order_repo.get_orders_by_customer_phone(sender_phone)
+            if len(customer_orders) == 1:
+                order_id = customer_orders[0].order_id
+            elif len(customer_orders) > 1:
+                # Multiple packages: interactive disambiguation
+                buttons = [
+                    {"id": f"return_{o.order_id}", "title": f"↩️ #{o.order_id}"}
+                    for o in customer_orders[:3]
+                ]
+                order_list_str = "\n".join(
+                    f"• *#{o.order_id}* ({', '.join(o.items) if o.items else 'Items'}) — {o.status.value}"
+                    for o in customer_orders
+                )
+                return (
+                    (
+                        f"↩️ We found *{len(customer_orders)} orders* associated with your phone number:\n\n"
+                        f"{order_list_str}\n\n"
+                        "Which order would you like to return or exchange? Tap a button below:"
+                    ),
+                    buttons,
+                    None,
+                )
+            else:
+                return (
+                    (
+                        "We could not find any active orders associated with your WhatsApp number. "
+                        "To assist with returns or refunds, please reply with your order number "
+                        "(for example: *#ORD-1003*)."
+                    ),
+                    None,
+                    None,
+                )
+
         if not order_id:
             return (
                 (

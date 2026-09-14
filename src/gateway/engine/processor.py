@@ -70,29 +70,52 @@ class MessageProcessor:
         logger.info("Routed event %s from %s as intent %s", event.wamid, phone, intent.value)
 
         # 4. Check for active security verification challenge
-        if session.pending_verification_order_id and intent not in (
-            Intent.HUMAN_ESCALATION,
-            Intent.MENU,
-        ):
-            reply, buttons, _, document = await self.agent.verify_order_ownership(
-                event.body, session
+        if session.pending_verification_order_id:
+            clean_body = event.body.strip().lower()
+            extracted_new_order = self.agent.extract_order_id(event.body, session=None)
+
+            # Did customer switch to a different order? (e.g. "Where is ord 1001?")
+            is_different_order = (
+                extracted_new_order is not None
+                and extracted_new_order != session.pending_verification_order_id
             )
-            if buttons:
-                await self.channel.send_interactive_buttons(phone, reply, buttons)
-            else:
-                await self.channel.send_text(phone, reply)
 
-            if document:
-                await self.channel.send_document(
+            # Did customer click a navigation button or type a menu command?
+            is_nav_escape = (
+                event.interactive_id in ("btn_track", "btn_return", "btn_menu", "btn_human")
+                or intent in (Intent.HUMAN_ESCALATION, Intent.MENU)
+                or clean_body in ("cancel", "stop", "abort", "reset", "menu", "options", "help")
+            )
+
+            if is_different_order or is_nav_escape:
+                logger.info(
+                    "User %s switched context; clearing pending verification for %s",
                     phone,
-                    document_url=document["document_url"],
-                    filename=document["filename"],
-                    caption=document.get("caption"),
+                    session.pending_verification_order_id,
                 )
+                session.pending_verification_order_id = None
+                self.session_store.save_session(session)
+            else:
+                # Customer is responding to verification challenge
+                reply, buttons, _, document = await self.agent.verify_order_ownership(
+                    event.body, session
+                )
+                if buttons:
+                    await self.channel.send_interactive_buttons(phone, reply, buttons)
+                else:
+                    await self.channel.send_text(phone, reply)
 
-            self.session_store.append_transcript(phone, role="assistant", message=reply)
-            self.session_store.save_session(session)
-            return
+                if document:
+                    await self.channel.send_document(
+                        phone,
+                        document_url=document["document_url"],
+                        filename=document["filename"],
+                        caption=document.get("caption"),
+                    )
+
+                self.session_store.append_transcript(phone, role="assistant", message=reply)
+                self.session_store.save_session(session)
+                return
 
         # 5. Execute workflow based on intent
         if intent == Intent.MENU:

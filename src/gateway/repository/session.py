@@ -23,6 +23,10 @@ class SessionStore(Protocol):
         """Mark an escalated or active session as resolved and reset to bot control."""
         ...
 
+    def reset_session(self, phone: str) -> None:
+        """Completely clear session state and history for a phone number."""
+        ...
+
 
 class InMemorySessionStore:
     """In-memory session store enforcing 24-hour customer service window timeout."""
@@ -71,4 +75,9 @@ class InMemorySessionStore:
         session = self.get_session(phone)
         session.status = SessionStatus.ACTIVE_BOT
         session.escalation_reason = None
+        session.pending_verification_order_id = None
         self.save_session(session)
+
+    def reset_session(self, phone: str) -> None:
+        if phone in self._sessions:
+            del self._sessions[phone]

@@ -11,6 +11,10 @@ class OrderRepository(Protocol):
         """Lookup an order by its identifier (e.g. ORD-1001 or #ORD-1001)."""
         ...
 
+    def get_orders_by_customer_phone(self, phone: str) -> list[OrderRecord]:
+        """Lookup all orders belonging to a customer's phone number."""
+        ...
+
     def evaluate_return(self, order_id: str, reason: str) -> dict[str, Any]:
         """Evaluate whether an order is eligible for return or refund."""
         ...
@@ -54,7 +58,37 @@ class InMemoryOrderRepository:
                 total_amount_usd=49.99,
                 order_date="2026-08-30",
             ),
+            "ORD-1004": OrderRecord(
+                order_id="ORD-1004",
+                customer_phone="15557778899",
+                status=OrderStatus.SHIPPED,
+                carrier="DHL Express",
+                tracking_number="TRK-778899",
+                estimated_delivery="2026-09-16",
+                items=["Smart Fitness Watch"],
+                total_amount_usd=199.00,
+                order_date="2026-09-10",
+            ),
+            "ORD-1005": OrderRecord(
+                order_id="ORD-1005",
+                customer_phone="15557778899",
+                status=OrderStatus.DELIVERED,
+                carrier="FedEx",
+                tracking_number="TRK-556677",
+                estimated_delivery="2026-09-05",
+                items=["Bluetooth Soundbar"],
+                total_amount_usd=89.50,
+                order_date="2026-09-01",
+            ),
         }
+
+    def get_orders_by_customer_phone(self, phone: str) -> list[OrderRecord]:
+        clean_target = re.sub(r"\D", "", phone)
+        return [
+            order
+            for order in self._orders.values()
+            if re.sub(r"\D", "", order.customer_phone) == clean_target
+        ]
 
     def _clean_order_id(self, order_id: str) -> str:
         clean = order_id.strip().upper()
