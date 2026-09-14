@@ -166,11 +166,11 @@ def build_pdf():
     # Pre-Recording Checklist Box
     checklist_data = [
         [
-            Paragraph("<b>RECORDING STRATEGY (VIDEO FIRST, AUDIO LATER):</b><br/>"
-                      "1. Start server: <code>uv run uvicorn gateway.main:app --host 0.0.0.0 --port 8000 --reload</code><br/>"
-                      "2. Open browser at <code>http://localhost:8000/demo</code> (100% zoom, both panes visible)<br/>"
-                      "3. Follow each step's <b>ACTION</b>, then <b>STAY ON THAT SCREEN</b> for the indicated <b>HOLD TIME</b> before clicking the next chip!<br/>"
-                      "4. Total video runtime: <b>~2 minutes 20 seconds</b> (141 seconds).", checklist_style)
+            Paragraph("<b>RECORDING STRATEGY & INTERACTION MODES:</b><br/>"
+                      "• <b>Dual Modes</b>: Customers can <b>click native WhatsApp buttons</b> or <b>write free-form text</b>.<br/>"
+                      "• <b>Menu support</b>: Customers can tap interactive quick-reply buttons or type <code>menu</code> at any time.<br/>"
+                      "• <b>Hold Time</b>: Perform each action, then pause on screen for the indicated seconds before clicking next!<br/>"
+                      "• Total video runtime: <b>~2 minutes 20 seconds</b> (141 seconds).", checklist_style)
         ]
     ]
     checklist_table = Table(checklist_data, colWidths=[560])
@@ -187,20 +187,20 @@ def build_pdf():
             "step": "STEP 0: INTRO & ARCHITECTURE",
             "duration": "14s",
             "action": "Hover mouse over WhatsApp phone on left, then live telemetry on right.",
-            "visual": "Browser at <code>localhost:8000/demo</code> showing phone simulator & telemetry console.",
+            "visual": "Browser at <code>localhost:8000/demo</code> showing phone simulator with welcome button menu and telemetry console.",
             "voice": "\"Welcome to our WhatsApp Support Gateway demo. Built with Python and FastAPI, this system delivers sub-30ms webhook acknowledgment, secure database tool calling, and seamless live human takeover.\""
         },
         {
-            "step": "STEP 1: ORDER TRACKING (SUB-30MS & READ RECEIPTS)",
+            "step": "STEP 1: BUTTON CLICK VS TYPING (SUB-30MS & READ RECEIPTS)",
             "duration": "12s",
-            "action": "Click chip: <b>1. Track #ORD-1001</b>",
-            "visual": "3 green typing dots appear, double ticks turn blue (read receipt), latency <20ms, FedEx details returned.",
-            "voice": "\"First, tracking an order: the webhook responds in under 20 milliseconds, marks the message as read with WhatsApp blue checkmarks, shows typing dots, and retrieves live FedEx status.\""
+            "action": "Hover over the welcome buttons, then click the native WhatsApp button: <b>📦 Track #ORD-1001</b> (or chip 1).",
+            "visual": "Inbound interactive button event logged. 3 green typing dots appear, double ticks turn blue (read receipt), latency <20ms, live FedEx status returned with action buttons.",
+            "voice": "\"Customers can interact however they prefer: by clicking native WhatsApp buttons and menus, or by typing natural text. Clicking our track button triggers sub-20ms acknowledgment, blue read receipts, typing dots, and live FedEx status with dynamic follow-up buttons.\""
         },
         {
             "step": "STEP 2: CONTEXT MEMORY & RETURN POLICY",
             "duration": "12s",
-            "action": "Click chip: <b>2. Can I return it?</b>",
+            "action": "Click chip: <b>2. Can I return it?</b> (or type it in the input).",
             "visual": "Bot resolves 'it' to #ORD-1001 and rejects return because shipment is in transit.",
             "voice": "\"Notice conversational context: asking 'Can I return it?' resolves 'it' to our active order. Because the package is still in transit, the bot strictly enforces return policy and explains returns require delivery first.\""
         },
@@ -221,7 +221,7 @@ def build_pdf():
         {
             "step": "STEP 5: DELIVERED ORDER RETURN REQUEST",
             "duration": "8s",
-            "action": "Click chip: <b>5. Return #ORD-1003</b>",
+            "action": "Click chip: <b>5. Return #ORD-1003</b> (or click the button in welcome bubble).",
             "visual": "Bot detects delivered order #ORD-1003 belongs to another account and requests 4-digit verification.",
             "voice": "\"Now requesting a return on a delivered order: the gateway validates eligibility before authorizing return shipping.\""
         },
@@ -242,7 +242,7 @@ def build_pdf():
         {
             "step": "STEP 8: HUMAN ESCALATION & STRICT BOT MUTING",
             "duration": "12s",
-            "action": "Click chip: <b>8. Talk to Human</b>",
+            "action": "Click chip: <b>8. Talk to Human</b> (or type <code>human</code>).",
             "visual": "Session State turns amber <b>ESCALATED_HUMAN</b>. External webhook fires. Operator Desk opens live WebSocket bridge.",
             "voice": "\"When a customer requests human help, an external webhook fires to Zendesk or n8n, strict bot muting engages, and our Operator Station opens a live WebSocket bridge.\""
         },
@@ -331,7 +331,7 @@ def build_pdf():
     story.append(st)
 
     doc.build(story)
-    print(f"Generated PDF with hold times at: {PDF_PATH}")
+    print(f"Generated PDF with hold times and button/typing features at: {PDF_PATH}")
 
     import shutil
     shutil.copy(PDF_PATH, STATIC_PATH)
