@@ -173,11 +173,13 @@ def build_pdf():
     # Pre-Recording Checklist Box
     checklist_data = [
         [
-            Paragraph("<b>RECORDING STRATEGY & INTERACTION MODES:</b><br/>"
-                      "• <b>Dual Modes</b>: Customers can <b>click native WhatsApp buttons</b> or <b>write free-form text</b>.<br/>"
-                      "• <b>Menu support</b>: Customers can tap interactive quick-reply buttons or type <code>menu</code> at any time.<br/>"
+            Paragraph("<b>RECORDING STRATEGY & ARCHITECTURAL HIGHLIGHTS:</b><br/>"
+                      "• <b>Phone-Based Identity</b>: Meta webhooks pass authenticated customer phone numbers, enabling zero-friction lookups without login.<br/>"
+                      "• <b>Simulated Phone Column</b>: Point out the header selector (Single Order: <code>15551234567</code>, Multi-Package: <code>15557778899</code>, New Customer: <code>15550000000</code>).<br/>"
+                      "• <b>Telemetry Cockpit</b>: Walk through sub-20ms Latency, HMAC Security, Intent Router, Session State, and Event Stream.<br/>"
+                      "• <b>All 4 Order Cases</b>: Single order auto-resolution, multi-package disambiguation, new customer fallback, and cross-phone Anti-IDOR privacy shield.<br/>"
                       "• <b>Hold Time</b>: Perform each action, then pause on screen for the indicated seconds before clicking next!<br/>"
-                      "• Total video runtime: <b>~2 minutes 20 seconds</b> (141 seconds).", checklist_style)
+                      "• Total video runtime: <b>~2 minutes 36 seconds</b> (156 seconds).", checklist_style)
         ]
     ]
     checklist_table = Table(checklist_data, colWidths=[560])
@@ -191,95 +193,102 @@ def build_pdf():
 
     steps = [
         {
-            "step": "STEP 0: INTRO & ARCHITECTURE",
+            "step": "STEP 0: INTRO, PHONE IDENTITY & TELEMETRY COCKPIT",
+            "duration": "16s",
+            "action": "Hover mouse over WhatsApp phone on left, point to <b>Simulated Phone</b> in header, then hover over the <b>Telemetry Cockpit</b> on right.",
+            "visual": "Browser at <code>localhost:8000/demo</code>. Left: WhatsApp simulator. Top: Phone presets. Right: Latency (18ms), HMAC (VALID), Intent (MENU), Session State (ACTIVE_BOT), and real-time backend event stream.",
+            "voice": "\"Welcome to our WhatsApp Support Gateway demo. Built with FastAPI and Python, this enterprise system eliminates login friction by using protocol-verified WhatsApp phone numbers from Meta webhooks. On the right, our live telemetry cockpit monitors sub-20ms latency, HMAC-SHA256 signature verification, deterministic intent routing, and real-time backend event logs.\""
+        },
+        {
+            "step": "STEP 1: SINGLE ORDER AUTO-RESOLUTION (ZERO TYPING)",
+            "duration": "12s",
+            "action": "With simulated phone <b>15551234567</b>, click the native button in phone: <b>📦 Track Order</b>.",
+            "visual": "Inbound webhook logged. Message ticks turn blue (read receipt), 3 typing dots appear, and bot immediately resolves #ORD-1001 (FedEx, in-transit) without typing an order number.",
+            "voice": "\"Because Meta passes the customer's verified phone number, our gateway checks the database automatically. Notice the sub-20ms latency, blue read receipt, and typing indicator: the customer never had to type an order number—their shipment details are on screen in one tap.\""
+        },
+        {
+            "step": "STEP 2: CONVERSATIONAL MEMORY & RETURN POLICY",
+            "duration": "10s",
+            "action": "Click chip: <b>2. Can I return it?</b> (or type it in the phone input).",
+            "visual": "Bot resolves pronoun 'it' to #ORD-1001. Because status is 'SHIPPED', the bot strictly enforces return policy: returns require delivery first.",
+            "voice": "\"Notice conversational context: asking 'Can I return it?' resolves 'it' to our active order. Because the package is still in transit, the bot enforces store policy and explains that returns require delivery first.\""
+        },
+        {
+            "step": "STEP 3: MULTI-PACKAGE CUSTOMER (DISAMBIGUATION)",
             "duration": "14s",
-            "action": "Hover mouse over WhatsApp phone on left, then live telemetry on right.",
-            "visual": "Browser at <code>localhost:8000/demo</code> showing phone simulator with welcome button menu and telemetry console.",
-            "voice": "\"Welcome to our WhatsApp Support Gateway demo. Built with Python and FastAPI, this system delivers sub-30ms webhook acknowledgment, secure database tool calling, and seamless live human takeover.\""
+            "action": "Click purple chip: <b>📦 Demo: Multi-Package</b><br/>(or switch header dropdown to <i>Multi-Package: 15557778899</i> and tap <b>[📦 Track Order]</b>).",
+            "visual": "Bot detects 2 active packages for phone +1 555-777-8899 (#ORD-1004 Smart Fitness Watch & #ORD-1005 Soundbar). Displays native buttons: <b>[📦 #ORD-1004]</b> and <b>[📦 #ORD-1005]</b>.",
+            "voice": "\"What if a customer ordered multiple packages? Switching to a customer with multiple active orders, the gateway automatically detects both packages and presents native interactive buttons to disambiguate with zero confusion.\""
         },
         {
-            "step": "STEP 1: BUTTON CLICK VS TYPING (SUB-30MS & READ RECEIPTS)",
+            "step": "STEP 4: 1-TAP PACKAGE SELECTION & LIVE TRACKING",
+            "duration": "10s",
+            "action": "Tap the interactive button: <b>📦 #ORD-1004</b>.",
+            "visual": "Bot instantly retrieves and displays the DHL Express tracking details and ETA for the Smart Fitness Watch.",
+            "voice": "\"Tapping the package button instantly pulls up the DHL Express tracking status for that exact shipment, with follow-up action buttons attached.\""
+        },
+        {
+            "step": "STEP 5: NEW CUSTOMER SCENARIO (0 ORDERS ON FILE)",
+            "duration": "10s",
+            "action": "In header dropdown, select: <b>New Customer (0 Orders)</b> (15550000000), click <b>🔄 Reset Session</b>, then tap <b>📦 Track Order</b>.",
+            "visual": "Bot replies: 'We could not find any active orders associated with your WhatsApp number. If you placed your order under a different number or email, please reply with your order number.'",
+            "voice": "\"If a new customer or unknown number reaches out, the gateway gracefully detects zero orders on file and prompts them for an order number in case they purchased as a gift or under an email.\""
+        },
+        {
+            "step": "STEP 6: CROSS-PHONE ORDER & ANTI-IDOR PRIVACY SHIELD",
             "duration": "12s",
-            "action": "Hover over the welcome buttons, then click the native WhatsApp button: <b>📦 Track #ORD-1001</b> (or chip 1).",
-            "visual": "Inbound interactive button event logged. 3 green typing dots appear, double ticks turn blue (read receipt), latency <20ms, live FedEx status returned with action buttons.",
-            "voice": "\"Customers can interact however they prefer: by clicking native WhatsApp buttons and menus, or by typing natural text. Clicking our track button triggers sub-20ms acknowledgment, blue read receipts, typing dots, and live FedEx status with dynamic follow-up buttons.\""
+            "action": "In header dropdown, switch back to: <b>Single Order (ORD-1001)</b>.<br/>Click chip: <b>3. Track #ORD-1002 (Security Check)</b>",
+            "visual": "Bot intercepts query for #ORD-1002 (registered to another phone 15559876543). Anti-IDOR security shield engages, blocks shipment details, and prompts for the last 4 digits on file.",
+            "voice": "\"To prevent privacy leaks and IDOR attacks, if a customer queries an order belonging to a different phone number, our security shield intercepts the request and demands the last 4 digits of the phone number on file.\""
         },
         {
-            "step": "STEP 2: CONTEXT MEMORY & RETURN POLICY",
-            "duration": "12s",
-            "action": "Click chip: <b>2. Can I return it?</b> (or type it in the input).",
-            "visual": "Bot resolves 'it' to #ORD-1001 and rejects return because shipment is in transit.",
-            "voice": "\"Notice conversational context: asking 'Can I return it?' resolves 'it' to our active order. Because the package is still in transit, the bot strictly enforces return policy and explains returns require delivery first.\""
-        },
-        {
-            "step": "STEP 3: ANTI-IDOR SECURITY CHALLENGE",
-            "duration": "9s",
-            "action": "Click chip: <b>3. Track #ORD-1002 (Security Check)</b>",
-            "visual": "Bot intercepts query for #ORD-1002 (belongs to another phone), blocks details, and asks for last 4 digits.",
-            "voice": "\"For privacy, if a customer queries someone else's order, our Anti-IDOR layer intercepts, blocks details, and demands the last 4 digits on file.\""
-        },
-        {
-            "step": "STEP 4: OWNERSHIP AUTHENTICATION",
-            "duration": "7s",
-            "action": "Click chip: <b>4. Verify: 6543</b>",
-            "visual": "Bot confirms 'Security Verification Successful!' and unlocks #ORD-1002 status.",
-            "voice": "\"Entering the 4 digits validates ownership, unlocks the session, and presents the order status.\""
-        },
-        {
-            "step": "STEP 5: DELIVERED ORDER RETURN REQUEST",
+            "step": "STEP 7: PIN AUTHENTICATION UNLOCKS ORDER",
             "duration": "8s",
-            "action": "Click chip: <b>5. Return #ORD-1003</b> (or click the button in welcome bubble).",
-            "visual": "Bot detects delivered order #ORD-1003 belongs to another account and requests 4-digit verification.",
-            "voice": "\"Now requesting a return on a delivered order: the gateway validates eligibility before authorizing return shipping.\""
+            "action": "Click chip: <b>4. Verify: 6543</b> (or type <code>6543</code>).",
+            "visual": "Bot replies: '✅ Security Verification Successful!' and unlocks #ORD-1002 status (PROCESSING).",
+            "voice": "\"Entering the 4 digits validates ownership, unlocks the session, and securely presents the order status.\""
         },
         {
-            "step": "STEP 6: PROGRAMMATIC PDF RETURN LABEL & BARCODE",
+            "step": "STEP 8: DELIVERED ORDER RETURN & PREPAID PDF LABEL",
             "duration": "15s",
-            "action": "Click chip: <b>6. Verify: 2233 (Get PDF)</b><br/>Then <b>click the PDF Document Card</b> in phone.",
-            "visual": "Bot approves return and delivers document card. Clicking opens vector PDF in new tab with Code128 barcode.",
-            "voice": "\"Once verified, the gateway programmatically generates a vector PDF return shipping label using ReportLab, complete with prepaid routing, a Code128 barcode, and an RMA packing slip.\""
+            "action": "Click chip <b>5. Return #ORD-1003</b>, then chip <b>6. Verify: 2233 (Get PDF)</b>.<br/>Then <b>click the PDF Document Card</b> in phone.",
+            "visual": "Bot verifies delivered order #ORD-1003, approves return, and attaches downloadable PDF card. Clicking opens vector PDF return label in new tab with Code128 barcode.",
+            "voice": "\"For delivered orders, the bot evaluates return eligibility and programmatically generates a vector PDF shipping label using ReportLab, complete with prepaid routing, a Code128 barcode, and an RMA packing slip.\""
         },
         {
-            "step": "STEP 7: SHOPIFY API INTEGRATION",
+            "step": "STEP 9: SHOPIFY ADMIN API ADAPTER SYNC",
             "duration": "11s",
-            "action": "(Switch back to demo tab) Click chip: <b>7. Shopify #1001</b>",
+            "action": "(Return to demo tab) Click chip: <b>7. Shopify #1001</b>",
             "visual": "Telemetry shows routing via <code>ShopifyOrderAdapter</code>. Bot returns live line items and fulfillment status.",
-            "voice": "\"Using clean ports and adapters, a single config flag switches from local storage to a live Shopify Admin REST API, seamlessly parsing live line items and fulfillment stages.\""
+            "voice": "\"Using hexagonal architecture, a single configuration switch connects our gateway to the live Shopify Admin REST API, parsing real-time line items and fulfillment stages seamlessly.\""
         },
         {
-            "step": "STEP 8: HUMAN ESCALATION & STRICT BOT MUTING",
+            "step": "STEP 10: HUMAN ESCALATION & STRICT BOT MUTING",
             "duration": "12s",
             "action": "Click chip: <b>8. Talk to Human</b> (or type <code>human</code>).",
-            "visual": "Session State turns amber <b>ESCALATED_HUMAN</b>. External webhook fires. Operator Desk opens live WebSocket bridge.",
-            "voice": "\"When a customer requests human help, an external webhook fires to Zendesk or n8n, strict bot muting engages, and our Operator Station opens a live WebSocket bridge.\""
+            "visual": "Session State turns amber <b>ESCALATED_HUMAN</b>. Telemetry logs external webhook to Zendesk/n8n. Operator Desk opens live 2-way WebSocket bridge.",
+            "voice": "\"When a customer needs human assistance, an external webhook fires to Zendesk, the bot mutes itself immediately, and our Operator Station connects via a real-time WebSocket bridge.\""
         },
         {
-            "step": "STEP 9: BOT MUTING VERIFICATION (ZERO SPAM)",
-            "duration": "10s",
-            "action": "In phone chat input, type: <b>Where is my refund?</b> and send.",
-            "visual": "Message appears on phone. <b>Bot stays silent.</b> Message appears live in Operator Chat Feed on right.",
-            "voice": "\"Customer follow-ups never trigger automated spam—the bot stays completely silent, while the customer's message streams live to our operator desk.\""
+            "step": "STEP 11: ANTI-SPAM VERIFICATION & LIVE 2-WAY CHAT",
+            "duration": "14s",
+            "action": "In phone chat input, type: <b>Where is my refund?</b> and send. (Bot stays silent).<br/>In Operator Desk on right, type: <b>Hi, Agent Sarah here! Your refund of $189.50 has been released.</b> and click <b>Send as Agent</b>.",
+            "visual": "Bot does NOT reply (zero spam). Customer message streams live to Operator Desk. Agent's reply dispatches directly to phone with blue <code>👤 Agent Sarah</code> badge.",
+            "voice": "\"Customer follow-ups never trigger annoying bot spam—the bot stays muted while messages stream live to the operator. The agent replies directly from the console, appearing instantly on the customer's WhatsApp.\""
         },
         {
-            "step": "STEP 10: REAL-TIME 2-WAY OPERATOR CHAT",
-            "duration": "12s",
-            "action": "In Operator Desk, type: <b>Hi, Agent Sarah here! Your refund of $189.50 has been released.</b> and click <b>Send as Agent</b>.",
-            "visual": "Message appears immediately on customer phone with blue <code>👤 Agent Sarah</code> badge.",
-            "voice": "\"As the human agent, typing a reply dispatches directly to the customer's WhatsApp in real time and logs to the permanent transcript.\""
-        },
-        {
-            "step": "STEP 11: SESSION RESOLUTION",
+            "step": "STEP 12: SESSION RESOLUTION",
             "duration": "7s",
             "action": "Click button: <b>Unmute Bot / Resolve</b>",
             "visual": "Operator Station closes. Session State returns to green <b>ACTIVE_BOT</b>.",
-            "voice": "\"Once resolved, clicking 'Unmute Bot' re-enables automated bot handling for future inquiries.\""
+            "voice": "\"Once resolved, clicking 'Unmute Bot' re-enables automated bot handling for future customer inquiries.\""
         },
         {
-            "step": "STEP 12: PRODUCTION RIGOR & 94 TESTS",
+            "step": "STEP 13: PRODUCTION RIGOR & 103 AUTOMATED TESTS",
             "duration": "12s",
             "action": "Switch to Terminal window and run: <b>uv run pytest</b>",
-            "visual": "All <b>94 tests pass green</b> in under 1.5 seconds.",
-            "voice": "\"Under the hood, the system is backed by Docker Compose, Redis Streams for horizontal scaling, strict mypy typing, and 94 automated tests passing in under 1.5 seconds.\""
+            "visual": "All <b>103 tests pass green</b> in under 1.6 seconds.",
+            "voice": "\"Under the hood, the system is backed by Docker Compose, Redis Streams for horizontal scaling, strict mypy typing, and 103 automated tests passing in under two seconds.\""
         },
     ]
 
