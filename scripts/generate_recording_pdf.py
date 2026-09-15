@@ -173,12 +173,12 @@ def build_pdf():
     # Pre-Recording Checklist Box
     checklist_data = [
         [
-            Paragraph("<b>RECORDING STRATEGY & ARCHITECTURAL HIGHLIGHTS:</b><br/>"
-                      "• <b>Phone-Based Identity</b>: Meta webhooks pass authenticated customer phone numbers, enabling zero-friction lookups without login.<br/>"
-                      "• <b>Simulated Phone Column</b>: Point out the header selector (Single Order: <code>15551234567</code>, Multi-Package: <code>15557778899</code>, New Customer: <code>15550000000</code>).<br/>"
-                      "• <b>Telemetry Cockpit</b>: Walk through sub-20ms Latency, HMAC Security, Intent Router, Session State, and Event Stream.<br/>"
-                      "• <b>All 4 Order Cases</b>: Single order auto-resolution, multi-package disambiguation, new customer fallback, and cross-phone Anti-IDOR privacy shield.<br/>"
-                      "• <b>Hold Time</b>: Perform each action, then pause on screen for the indicated seconds before clicking next!<br/>"
+            Paragraph("<b>RECORDING TIPS & SYSTEM HIGHLIGHTS:</b><br/>"
+                      "• <b>Phone Number Identity</b>: WhatsApp identifies callers by phone number. Customers never need to log in or create an account.<br/>"
+                      "• <b>Phone Selector in Header</b>: Use the phone dropdown at the top to simulate different customers (Single Order: <code>15551234567</code>, Multi-Package: <code>15557778899</code>, New Customer: <code>15550000000</code>).<br/>"
+                      "• <b>Live Telemetry Dashboard</b>: The panel on the right shows response times (under 20ms), message security checks, bot logic, and live server logs.<br/>"
+                      "• <b>Real-World Customer Scenarios</b>: Single order (1-tap), multiple packages (buttons), brand-new customer, gift/cross-phone security check, PDF returns, Shopify sync, and live human handoff.<br/>"
+                      "• <b>Hold Times</b>: Perform each action, then keep the screen still for the indicated seconds before clicking the next step. This makes recording voiceover easy!<br/>"
                       "• Total video runtime: <b>~2 minutes 36 seconds</b> (156 seconds).", checklist_style)
         ]
     ]
@@ -193,102 +193,102 @@ def build_pdf():
 
     steps = [
         {
-            "step": "STEP 0: INTRO, PHONE IDENTITY & TELEMETRY COCKPIT",
+            "step": "STEP 0: INTRO, PHONE IDENTITY & TELEMETRY DASHBOARD",
             "duration": "16s",
-            "action": "Hover mouse over WhatsApp phone on left, point to <b>Simulated Phone</b> in header, then hover over the <b>Telemetry Cockpit</b> on right.",
-            "visual": "Browser at <code>localhost:8000/demo</code>. Left: WhatsApp simulator. Top: Phone presets. Right: Latency (18ms), HMAC (VALID), Intent (MENU), Session State (ACTIVE_BOT), and real-time backend event stream.",
-            "voice": "\"Welcome to our WhatsApp Support Gateway demo. Built with FastAPI and Python, this enterprise system eliminates login friction by using protocol-verified WhatsApp phone numbers from Meta webhooks. On the right, our live telemetry cockpit monitors sub-20ms latency, HMAC-SHA256 signature verification, deterministic intent routing, and real-time backend event logs.\""
+            "action": "Hover mouse over WhatsApp phone on the left, point to <b>Simulated Phone</b> in the top bar, then point to the <b>Telemetry Dashboard</b> on the right.",
+            "visual": "Browser at <code>localhost:8000/demo</code>. Left: WhatsApp simulator. Top: Phone presets. Right: Live dashboard showing sub-20ms speed, security checks, bot state, and real-time server logs.",
+            "voice": "\"Welcome to the WhatsApp Support Gateway demo. This system lets online stores handle customer support directly on WhatsApp with zero login hassle. The bot identifies shoppers automatically by their phone number. In our top bar, you can see our phone selector, which lets us test different customer numbers. On the right, our live dashboard shows everything happening behind the scenes: lightning-fast speeds under 20 milliseconds, message security checks, bot decisions, and live server logs.\""
         },
         {
-            "step": "STEP 1: SINGLE ORDER AUTO-RESOLUTION (ZERO TYPING)",
+            "step": "STEP 1: SINGLE ORDER AUTO-LOOKUP (ZERO TYPING)",
             "duration": "12s",
-            "action": "With simulated phone <b>15551234567</b>, click the native button in phone: <b>📦 Track Order</b>.",
-            "visual": "Inbound webhook logged. Message ticks turn blue (read receipt), 3 typing dots appear, and bot immediately resolves #ORD-1001 (FedEx, in-transit) without typing an order number.",
-            "voice": "\"Because Meta passes the customer's verified phone number, our gateway checks the database automatically. Notice the sub-20ms latency, blue read receipt, and typing indicator: the customer never had to type an order number—their shipment details are on screen in one tap.\""
+            "action": "With simulated phone <b>15551234567</b>, click the button in the phone: <b>📦 Track Order</b> (or type <code>Track</code>).",
+            "visual": "Message sent. Blue checkmarks appear, typing indicator blinks, and the bot instantly returns tracking for order #ORD-1001 with carrier (FedEx) and status (In Transit).",
+            "voice": "\"When a customer taps 'Track Order' or types a message, the bot checks their phone number against the store database. Notice the blue checkmarks and typing dots. The customer never had to type an order number or search through emails—their FedEx tracking details appear in one tap in under a second.\""
         },
         {
-            "step": "STEP 2: CONVERSATIONAL MEMORY & RETURN POLICY",
+            "step": "STEP 2: CONVERSATIONAL MEMORY & RETURN CHECK",
             "duration": "10s",
-            "action": "Click chip: <b>2. Can I return it?</b> (or type it in the phone input).",
-            "visual": "Bot resolves pronoun 'it' to #ORD-1001. Because status is 'SHIPPED', the bot strictly enforces return policy: returns require delivery first.",
-            "voice": "\"Notice conversational context: asking 'Can I return it?' resolves 'it' to our active order. Because the package is still in transit, the bot enforces store policy and explains that returns require delivery first.\""
+            "action": "Click chip: <b>2. Can I return it?</b> (or type <code>Can I return it?</code> in the chat input).",
+            "visual": "Bot understands 'it' refers to order #ORD-1001. Because the package is still in transit, it explains that an order must be delivered first before starting a return.",
+            "voice": "\"The bot has conversational memory. When the customer asks 'Can I return it?', the bot knows exactly which order they mean. Because the package is still on the delivery truck, it politely explains that an item must be delivered before it can be returned.\""
         },
         {
-            "step": "STEP 3: MULTI-PACKAGE CUSTOMER (DISAMBIGUATION)",
+            "step": "STEP 3: CUSTOMER WITH MULTIPLE PACKAGES",
             "duration": "14s",
-            "action": "Click purple chip: <b>📦 Demo: Multi-Package</b><br/>(or switch header dropdown to <i>Multi-Package: 15557778899</i> and tap <b>[📦 Track Order]</b>).",
-            "visual": "Bot detects 2 active packages for phone +1 555-777-8899 (#ORD-1004 Smart Fitness Watch & #ORD-1005 Soundbar). Displays native buttons: <b>[📦 #ORD-1004]</b> and <b>[📦 #ORD-1005]</b>.",
-            "voice": "\"What if a customer ordered multiple packages? Switching to a customer with multiple active orders, the gateway automatically detects both packages and presents native interactive buttons to disambiguate with zero confusion.\""
+            "action": "Click purple chip: <b>📦 Demo: Multi-Package</b><br/>(or switch top dropdown to <i>Multi-Package: 15557778899</i> and tap <b>[📦 Track Order]</b>).",
+            "visual": "Bot finds 2 active packages for phone +1 555-777-8899 (#ORD-1004 Fitness Watch & #ORD-1005 Soundbar). It shows clickable buttons: <b>[📦 #ORD-1004]</b> and <b>[📦 #ORD-1005]</b>.",
+            "voice": "\"What happens if a customer has more than one package on the way? When we switch to a customer with multiple orders and tap 'Track Order', the bot finds both shipments automatically. Instead of getting confused, it presents simple buttons so the customer can choose which package to track.\""
         },
         {
             "step": "STEP 4: 1-TAP PACKAGE SELECTION & LIVE TRACKING",
             "duration": "10s",
             "action": "Tap the interactive button: <b>📦 #ORD-1004</b>.",
-            "visual": "Bot instantly retrieves and displays the DHL Express tracking details and ETA for the Smart Fitness Watch.",
-            "voice": "\"Tapping the package button instantly pulls up the DHL Express tracking status for that exact shipment, with follow-up action buttons attached.\""
+            "visual": "Bot instantly displays DHL Express tracking details and estimated delivery date for the Smart Fitness Watch.",
+            "voice": "\"Tapping package 1004 immediately pulls up the live DHL tracking details and estimated arrival date, with options to return or speak to support.\""
         },
         {
-            "step": "STEP 5: NEW CUSTOMER SCENARIO (0 ORDERS ON FILE)",
+            "step": "STEP 5: BRAND NEW CUSTOMER (0 ORDERS ON FILE)",
             "duration": "10s",
-            "action": "In header dropdown, select: <b>New Customer (0 Orders)</b> (15550000000), click <b>🔄 Reset Session</b>, then tap <b>📦 Track Order</b>.",
+            "action": "In top dropdown, select: <b>New Customer (0 Orders)</b> (15550000000), click <b>🔄 Reset Session</b>, then tap <b>📦 Track Order</b>.",
             "visual": "Bot replies: 'We could not find any active orders associated with your WhatsApp number. If you placed your order under a different number or email, please reply with your order number.'",
-            "voice": "\"If a new customer or unknown number reaches out, the gateway gracefully detects zero orders on file and prompts them for an order number in case they purchased as a gift or under an email.\""
+            "voice": "\"Now, what if a brand new customer messages us? If there are no orders linked to their phone number, the bot handles it gracefully. It lets them know no orders were found and invites them to enter an order number or connect with a human agent.\""
         },
         {
-            "step": "STEP 6: CROSS-PHONE ORDER & ANTI-IDOR PRIVACY SHIELD",
+            "step": "STEP 6: GIFT / DIFFERENT PHONE (PRIVACY PROTECTION)",
             "duration": "12s",
-            "action": "In header dropdown, switch back to: <b>Single Order (ORD-1001)</b>.<br/>Click chip: <b>3. Track #ORD-1002 (Security Check)</b>",
-            "visual": "Bot intercepts query for #ORD-1002 (registered to another phone 15559876543). Anti-IDOR security shield engages, blocks shipment details, and prompts for the last 4 digits on file.",
-            "voice": "\"To prevent privacy leaks and IDOR attacks, if a customer queries an order belonging to a different phone number, our security shield intercepts the request and demands the last 4 digits of the phone number on file.\""
+            "action": "In top dropdown, switch back to: <b>Single Order (ORD-1001)</b>.<br/>Click chip: <b>3. Track #ORD-1002 (Security Check)</b>.",
+            "visual": "Customer asks for #ORD-1002, which belongs to another phone number. The security system blocks the details and asks for the last 4 digits of the phone number on that order.",
+            "voice": "\"Sometimes someone buys a gift or uses a different phone to ask about an order. To prevent strangers from snooping on other people's packages, our security system steps in and asks for the last four digits of the phone number on that order.\""
         },
         {
-            "step": "STEP 7: PIN AUTHENTICATION UNLOCKS ORDER",
+            "step": "STEP 7: 4-DIGIT VERIFICATION UNLOCKS ORDER",
             "duration": "8s",
             "action": "Click chip: <b>4. Verify: 6543</b> (or type <code>6543</code>).",
-            "visual": "Bot replies: '✅ Security Verification Successful!' and unlocks #ORD-1002 status (PROCESSING).",
-            "voice": "\"Entering the 4 digits validates ownership, unlocks the session, and securely presents the order status.\""
+            "visual": "Bot verifies the digits, confirms identity, and displays order #ORD-1002 status (Processing).",
+            "voice": "\"When the customer types those four digits—6543—the bot confirms their identity, unlocks the order, and shows the latest status.\""
         },
         {
-            "step": "STEP 8: DELIVERED ORDER RETURN & PREPAID PDF LABEL",
+            "step": "STEP 8: DELIVERED RETURN & INSTANT PDF SHIPPING LABEL",
             "duration": "15s",
-            "action": "Click chip <b>5. Return #ORD-1003</b>, then chip <b>6. Verify: 2233 (Get PDF)</b>.<br/>Then <b>click the PDF Document Card</b> in phone.",
-            "visual": "Bot verifies delivered order #ORD-1003, approves return, and attaches downloadable PDF card. Clicking opens vector PDF return label in new tab with Code128 barcode.",
-            "voice": "\"For delivered orders, the bot evaluates return eligibility and programmatically generates a vector PDF shipping label using ReportLab, complete with prepaid routing, a Code128 barcode, and an RMA packing slip.\""
+            "action": "Click chip <b>5. Return #ORD-1003</b>, then chip <b>6. Verify: 2233 (Get PDF)</b>.<br/>Then <b>click the PDF Document Card</b> in the phone.",
+            "visual": "Order #ORD-1003 is verified as delivered. Bot approves return and attaches a downloadable PDF label. Clicking opens the vector PDF return label in a new tab with a scannable barcode and instructions.",
+            "voice": "\"For delivered orders, the bot handles returns completely on autopilot. It checks return eligibility, approves it, and creates a ready-to-print return shipping label with a scannable barcode directly inside WhatsApp.\""
         },
         {
-            "step": "STEP 9: SHOPIFY ADMIN API ADAPTER SYNC",
+            "step": "STEP 9: LIVE SHOPIFY STORE SYNC",
             "duration": "11s",
-            "action": "(Return to demo tab) Click chip: <b>7. Shopify #1001</b>",
-            "visual": "Telemetry shows routing via <code>ShopifyOrderAdapter</code>. Bot returns live line items and fulfillment status.",
-            "voice": "\"Using hexagonal architecture, a single configuration switch connects our gateway to the live Shopify Admin REST API, parsing real-time line items and fulfillment stages seamlessly.\""
+            "action": "(Return to demo tab) Click chip: <b>7. Shopify #1001</b>.",
+            "visual": "Telemetry shows data pulled via <code>ShopifyOrderAdapter</code>. Bot displays live item names, prices, and fulfillment status directly from Shopify.",
+            "voice": "\"The system also connects directly to Shopify. With a single setting, it syncs live products, prices, and shipping stages straight from the store's Shopify account.\""
         },
         {
-            "step": "STEP 10: HUMAN ESCALATION & STRICT BOT MUTING",
+            "step": "STEP 10: HUMAN SUPPORT & AUTOMATIC BOT MUTING",
             "duration": "12s",
             "action": "Click chip: <b>8. Talk to Human</b> (or type <code>human</code>).",
-            "visual": "Session State turns amber <b>ESCALATED_HUMAN</b>. Telemetry logs external webhook to Zendesk/n8n. Operator Desk opens live 2-way WebSocket bridge.",
-            "voice": "\"When a customer needs human assistance, an external webhook fires to Zendesk, the bot mutes itself immediately, and our Operator Station connects via a real-time WebSocket bridge.\""
+            "visual": "Session state changes to amber <b>ESCALATED_HUMAN</b>. Live Operator Station opens on the right.",
+            "voice": "\"Whenever a customer prefers to talk to a person, they simply type 'human' or tap the button. The bot mutes itself immediately so it won't interrupt, and opens a live support station for human agents.\""
         },
         {
-            "step": "STEP 11: ANTI-SPAM VERIFICATION & LIVE 2-WAY CHAT",
+            "step": "STEP 11: LIVE TWO-WAY CHAT & ZERO BOT SPAM",
             "duration": "14s",
-            "action": "In phone chat input, type: <b>Where is my refund?</b> and send. (Bot stays silent).<br/>In Operator Desk on right, type: <b>Hi, Agent Sarah here! Your refund of $189.50 has been released.</b> and click <b>Send as Agent</b>.",
-            "visual": "Bot does NOT reply (zero spam). Customer message streams live to Operator Desk. Agent's reply dispatches directly to phone with blue <code>👤 Agent Sarah</code> badge.",
-            "voice": "\"Customer follow-ups never trigger annoying bot spam—the bot stays muted while messages stream live to the operator. The agent replies directly from the console, appearing instantly on the customer's WhatsApp.\""
+            "action": "In phone input, type: <b>Where is my refund?</b> and send. (Notice bot stays silent).<br/>In Operator Station on right, type: <b>Hi, Agent Sarah here! Your refund of $189.50 has been released.</b> and click <b>Send as Agent</b>.",
+            "visual": "Customer's message appears live in the Operator Station without any automated bot spam. Agent's reply appears in WhatsApp with an <b>Agent Sarah</b> badge.",
+            "voice": "\"Notice that when the customer sends more messages, the bot stays completely quiet—no automated spam. Messages appear live on the agent's screen, and when the agent replies, their message appears instantly on the customer's phone.\""
         },
         {
-            "step": "STEP 12: SESSION RESOLUTION",
+            "step": "STEP 12: RESOLVING AND RE-ACTIVATING THE BOT",
             "duration": "7s",
-            "action": "Click button: <b>Unmute Bot / Resolve</b>",
-            "visual": "Operator Station closes. Session State returns to green <b>ACTIVE_BOT</b>.",
-            "voice": "\"Once resolved, clicking 'Unmute Bot' re-enables automated bot handling for future customer inquiries.\""
+            "action": "Click button: <b>Unmute Bot / Resolve</b>.",
+            "visual": "Operator Station closes. Session state turns back to green <b>ACTIVE_BOT</b>.",
+            "voice": "\"Once the customer's issue is solved, the agent clicks 'Unmute Bot'. The session returns to automated bot mode, ready for future questions.\""
         },
         {
-            "step": "STEP 13: PRODUCTION RIGOR & 103 AUTOMATED TESTS",
+            "step": "STEP 13: TEST SUITE & PRODUCTION RELIABILITY",
             "duration": "12s",
-            "action": "Switch to Terminal window and run: <b>uv run pytest</b>",
-            "visual": "All <b>103 tests pass green</b> in under 1.6 seconds.",
-            "voice": "\"Under the hood, the system is backed by Docker Compose, Redis Streams for horizontal scaling, strict mypy typing, and 103 automated tests passing in under two seconds.\""
+            "action": "Switch to terminal window and run: <b>uv run pytest</b>.",
+            "visual": "All <b>103 automated tests pass green</b> in under 1.6 seconds.",
+            "voice": "\"Under the hood, this is built for production reliability. Running our automated test suite shows all 103 unit and integration tests passing in under two seconds.\""
         },
     ]
 
