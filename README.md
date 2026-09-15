@@ -2,13 +2,7 @@
 
 > **Commercial-grade, high-concurrency customer support automation for e-commerce brands on WhatsApp. Engineered with sub-30ms webhook acknowledgment, WAMID idempotency, phone-based zero-login identity, multi-package disambiguation, anti-IDOR security challenges, programmatic vector PDF return labels, and stateful human escalation.**
 
-[![Tests](https://img.shields.io/badge/tests-103%20passed-brightgreen.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/tests)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
-[![Pydantic](https://img.shields.io/badge/Pydantic-V2-e92063.svg)](https://docs.pydantic.dev/)
-[![Type Checking](https://img.shields.io/badge/mypy-strict%20clean-success.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/pyproject.toml)
-[![Linting](https://img.shields.io/badge/ruff-passed-10b981.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/pyproject.toml)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/Dockerfile)
+
 
 ---
 
@@ -295,43 +289,6 @@ cp .env.example .env
 
 ---
 
-## 8. Tailored Upwork Proposal Snippet
-
-When bidding on client contracts seeking WhatsApp Business API integration, AI customer support chatbots, or e-commerce automation, use this proposal:
-
-```markdown
-Hi [Client Name],
-
-I noticed your job post regarding WhatsApp Business API integration and customer support automation.
-
-Most WhatsApp customer service bots fail in production due to three specific architectural flaws:
-1. Webhook Retry Storms: Meta requires an HTTP 200 OK response within 3 seconds. When backend CRM lookups or AI agents take longer, Meta retries the webhook every few seconds, flooding customers with duplicate messages.
-2. Insecure Data Access (IDOR): Naive bots reveal customer shipping addresses and order contents whenever an arbitrary order number is typed into chat.
-3. Chatbot Lock-in: When a customer is frustrated and asks for a human, unmanaged bots keep replying and spamming the conversation.
-
-To solve this, I architect WhatsApp support gateways using:
-• Sub-30ms Ingestion Decoupling: Immediately validates HMAC-SHA256 signatures, deduplicates messages by WAMID, enqueues payloads, and returns HTTP 200 OK.
-• Phone-Based Zero-Login Identity: Automatic order lookup using Meta's protocol-authenticated phone numbers, eliminating login friction.
-• Multi-Package Disambiguation: Interactive buttons for customers with multiple active shipments.
-• Anti-IDOR Security: Automatic 4-digit PIN verification before sharing details on orders from another phone number.
-• Automated Returns: Real-time return policy validation and programmatic vector PDF shipping labels with Code128 barcodes.
-• Stateful Human Escalation: Mutes the bot instantly upon human handoff and connects via a live two-way WebSocket operator desk.
-
-I have already built, tested, and containerized an enterprise reference implementation:
-• Stack: Python (FastAPI), Meta Graph API v20.0+, Redis Streams, ReportLab Vector PDF, Pydantic V2, Docker.
-• Test Rigor: 103 automated unit and integration tests passing in under 2 seconds, with strict type checking and zero lint warnings.
-• Live Demo: Includes an interactive web simulator and live telemetry cockpit demonstrating all flows with zero credentials needed.
-
-I can have your WhatsApp API integration, order lookup, and helpdesk routing operational in days.
-
-Are you available for a quick 10-minute call to discuss your current store volume and backend systems?
-
-Best regards,
-[Your Name]
-```
-
----
-
-## 9. License
+## 8. License
 
 Distributed under the **MIT License**. Free for commercial and private use.

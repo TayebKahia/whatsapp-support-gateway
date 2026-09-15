@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Testing & Linting caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local Environment Variables & Secrets
+.env
+*.env
+*.env.*
+!*.env.example
+
+# Scratch & Issue Tracking
+.scratch/
+*.scratch
+scratch/
+
+# AI Instructions, Prompts & Skills
+JOB_POST.md
+docs/JOB_POST.md
+AGENTS.md
+CLAUDE.md
+.agents/
+skills/
+saveforlater.md
+
+# IDE & Operating System
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
