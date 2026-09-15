@@ -1,30 +1,33 @@
 # WhatsApp Support Gateway (Meta Cloud API + Bounded AI Tool-Calling)
 
-> **Commercial-Grade E-Commerce Customer Support Automation with Sub-30ms Webhook Acknowledgment, WAMID Idempotency, and Stateful Human Escalation.**
+> **Commercial-grade, high-concurrency customer support automation for e-commerce brands on WhatsApp. Engineered with sub-30ms webhook acknowledgment, WAMID idempotency, phone-based zero-login identity, multi-package disambiguation, anti-IDOR security challenges, programmatic vector PDF return labels, and stateful human escalation.**
 
-[![Tests](https://img.shields.io/badge/tests-94%20passed-brightgreen.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/tests)
+[![Tests](https://img.shields.io/badge/tests-103%20passed-brightgreen.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/tests)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
 [![Pydantic](https://img.shields.io/badge/Pydantic-V2-e92063.svg)](https://docs.pydantic.dev/)
+[![Type Checking](https://img.shields.io/badge/mypy-strict%20clean-success.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/pyproject.toml)
+[![Linting](https://img.shields.io/badge/ruff-passed-10b981.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/pyproject.toml)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](file:///home/kahia-tayeb/Freelance/projects/whatsapp-support-gateway/Dockerfile)
 
 ---
 
-## 1. Executive Summary
+## 1. Executive Summary & Business Problem
 
-E-commerce businesses losing customer orders over slow WhatsApp response times face two common pitfalls:
-1. **The Webhook Retry Storm**: LLMs or slow database queries take $> 3$ seconds to answer. Meta Cloud API times out and retries the webhook, triggering infinite duplicate messages and wasted compute costs.
-2. **The Unguarded Chatbot**: Unconstrained prompt wrappers hallucinate delivery dates, fail on return policies, or argue with angry customers without human intervention.
+E-commerce businesses losing customer orders over slow WhatsApp response times face two common pitfalls in production:
 
-The **WhatsApp Support Gateway** solves both problems with an enterprise architecture:
-- **Sub-30ms Ingestion Decoupling**: Validates HMAC-SHA256 signatures, deduplicates via WhatsApp Message ID (`WAMID`), enqueues messages asynchronously, and returns `HTTP 200 OK` in under 30ms.
-- **Distributed Redis Streams**: Horizontal worker pool scaling across container replicas via Redis Streams and Consumer Groups (`XADD`, `XREADGROUP`, `XACK`).
-- **Real-Time 2-Way WebSocket Human Chat**: Operator console (`/ws/operator/{phone}`) enabling live agent takeover, two-way WhatsApp chat dispatch, and customer message broadcasting.
-- **WhatsApp Read Receipts & Typing Indicators**: Instant `status: "read"` Graph API signals (blue ticks) and realistic typing bubble animations.
-- **Programmatic PDF Return Labels**: Vector shipping labels & RMA packing slips generated via `reportlab` with scannable Code128 barcodes served dynamically.
-- **Multi-Backend E-Commerce Ports**: Swappable order repositories including `ShopifyOrderAdapter` (Shopify Admin REST API + offline fixtures) and `InMemoryOrderRepository`.
-- **Anti-IDOR Security Challenge**: 4-digit phone verification challenge preventing unauthorized cross-customer order queries.
-- **Zero-Credential Interactive Cockpit**: Features an embedded dual-pane web simulator (`/demo`) with an authentic WhatsApp phone mockup on the left and a live engine telemetry console on the right.
+1. **The Webhook Retry Storm**: LLMs or slow database queries take $> 3$ seconds to reply. Meta's WhatsApp Cloud API times out, aggressively retrying the webhook every 10–20 seconds. This triggers infinite message duplication loops, broken conversational state, and ballooning compute/LLM costs.
+2. **The Unguarded Chatbot**: Unconstrained prompt wrappers hallucinate tracking numbers, bypass return eligibility windows, or get stuck in repetitive loops with angry customers. Furthermore, naive bot implementations leak sensitive shipping addresses when an attacker types another customer's order ID (*Insecure Direct Object Reference / IDOR*).
+
+The **WhatsApp Support Gateway** solves both problems with an enterprise-ready, hexagonal architecture:
+- **Sub-30ms Ingestion Decoupling**: Validates HMAC-SHA256 signatures, deduplicates inbound messages by WhatsApp Message ID (`WAMID`), enqueues payloads asynchronously, and returns `HTTP 200 OK` to Meta in under 25ms.
+- **Phone-Based Zero-Login Identity**: Leverages WhatsApp's protocol-authenticated phone numbers. Customers never need to create accounts, remember passwords, or dig up order numbers to check package status.
+- **Multi-Package Disambiguation**: Automatically identifies when a shopper has multiple active shipments (e.g., `#ORD-1004` and `#ORD-1005`) and presents native interactive buttons for instant 1-tap package tracking.
+- **Anti-IDOR Security Shield**: If a shopper queries an order placed under a different phone number (such as a gift or shared household account), the gateway demands the last 4 digits of the phone number on file before revealing order details.
+- **Automated Returns & Instant Vector PDF Labels**: Evaluates store return policies on delivered packages (`#ORD-1003`) and dynamically generates printable vector PDF shipping labels complete with scannable Code128 barcodes and RMA packing slips.
+- **Shopify Admin REST API Integration**: Swappable order repository ports supporting live Shopify store sync (`ShopifyOrderAdapter`) and offline development fixtures.
+- **Stateful Human Escalation & Strict Bot Muting**: Dispatches webhook alerts to external helpdesks (Zendesk / n8n), completely mutes the automated bot to eliminate spam, and opens a real-time two-way WebSocket bridge for human agents.
+- **Zero-Credential Dual-Pane Cockpit (`/demo`)**: An embedded web cockpit with a simulated WhatsApp phone interface on the left and a live engine telemetry console on the right (speed, HMAC status, bot intent, and real-time server logs).
 
 ---
 
@@ -34,181 +37,301 @@ The **WhatsApp Support Gateway** solves both problems with an enterprise archite
 flowchart TD
     subgraph ClientLayer [WhatsApp & Meta Cloud]
         WA[Customer on WhatsApp]
-        MetaAPI[Meta WhatsApp Cloud API]
-        WA <-->|End-to-End Encrypted| MetaAPI
+        MetaAPI[Meta WhatsApp Cloud API v20.0+]
+        WA <-->|End-to-End Encrypted Messages| MetaAPI
     end
 
     subgraph GatewayCore [WhatsApp Support Gateway Service]
-        subgraph IngestionBoundary [Ingestion Boundary]
+        subgraph IngestionBoundary [1. Ingestion Boundary (Sub-30ms)]
             WH[POST /webhook]
-            HMAC[HMAC SHA-256 Signature Validator]
+            HMAC[HMAC SHA-256 Validator]
             Idem[Idempotency Filter (WAMID)]
         end
 
-        subgraph QueueLayer [Queue & Concurrency Layer]
+        subgraph QueueLayer [2. Asynchronous Queue Layer]
             QueuePort[QueuePort Interface]
             InProcQueue[In-Process Async Worker Pool]
-            RedisQueue[Redis Queue Adapter (Optional)]
+            RedisQueue[Redis Streams Consumer Group]
         end
 
-        subgraph CoreEngine [Core Conversational Engine]
+        subgraph CoreEngine [3. Core Conversational Engine]
+            Processor[Event Processor & Identity Resolver]
             Router[Intent Router]
             SM[Session State Machine]
-            ToolAgent[Bounded Tool Calling Agent]
-            LLMClient[OpenAI-Compatible LLM Client (Ollama/Groq/Mock)]
+            ToolAgent[Bounded Tool Agent]
         end
 
-        subgraph DataLayer [Storage & Backend Adapters]
-            SessionDB[(SQLite / In-Memory Session Store)]
-            OrderDB[(E-Commerce Order Repository)]
+        subgraph Repositories [4. Data Adapters & PDF Generator]
+            OrderRepo[(Order Repository)]
+            ShopifyAdapter[Shopify Admin REST API]
+            SessionStore[(Session Store)]
+            PDFGen[ReportLab Vector PDF Generator]
         end
 
-        subgraph OutboundBoundary [Outbound Adapters]
-            ChannelPort[WhatsAppChannelPort Interface]
-            MetaAdapter[Meta Cloud API Adapter]
-            MockAdapter[Mock WhatsApp Test Adapter]
-            EventWebhook[Outbound Event Dispatcher (n8n/Slack)]
+        subgraph OutboundBoundary [5. Outbound Channels & Human Takeover]
+            ChannelPort[WhatsAppChannelPort]
+            MetaChannel[Meta Graph API Channel]
+            MockChannel[Mock Test Channel]
+            WSOperator[WebSocket Human Operator Desk]
+            EventWebhook[Outbound Event Dispatcher (n8n/Zendesk)]
         end
     end
 
-    subgraph ExternalAutomation [Low-Code Automation & Support]
-        N8N[n8n / Make / Zapier Workflows]
-        Zendesk[Helpdesk / Human Support Agent]
-    end
-
-    MetaAPI -->|POST Webhook Event| WH
+    MetaAPI -->|Inbound Webhook Event| WH
     WH --> HMAC
-    HMAC -->|Valid| Idem
-    Idem -->|New Message| QueuePort
+    HMAC -->|Valid Signature| Idem
+    Idem -->|Unique WAMID| QueuePort
     QueuePort -.-> InProcQueue
     QueuePort -.-> RedisQueue
-    WH -->|HTTP 200 OK (< 30ms)| MetaAPI
+    WH -->|HTTP 200 OK (< 25ms)| MetaAPI
 
-    InProcQueue --> Router
-    RedisQueue --> Router
+    InProcQueue --> Processor
+    RedisQueue --> Processor
 
-    Router --> SM
-    SM <--> SessionDB
+    Processor --> Router
+    Processor <--> SM
+    SM <--> SessionStore
+
     Router --> ToolAgent
-    ToolAgent <--> LLMClient
-    ToolAgent <--> OrderDB
-
-    SM -->|State: ESCALATED| EventWebhook
-    EventWebhook -->|HTTP POST Event| N8N
-    N8N --> Zendesk
+    ToolAgent <--> OrderRepo
+    ToolAgent <--> ShopifyAdapter
+    ToolAgent --> PDFGen
 
     Router --> ChannelPort
-    ChannelPort -.-> MetaAdapter
-    ChannelPort -.-> MockAdapter
-    MetaAdapter -->|POST /messages| MetaAPI
+    ChannelPort -.-> MetaChannel
+    ChannelPort -.-> MockChannel
+    MetaChannel -->|Outbound Text / Buttons / Documents| MetaAPI
+
+    SM -->|State: ESCALATED_HUMAN| EventWebhook
+    EventWebhook -->|Webhook POST| WSOperator
+    WSOperator <-->|2-Way Live WebSocket| ChannelPort
 ```
 
 ---
 
-## 3. Quickstart & Interactive Demo
+## 3. Core Capabilities & Customer Scenarios
+
+| Customer Scenario | Real-World Problem | Gateway Technical Resolution |
+| :--- | :--- | :--- |
+| **1. Single Order Auto-Lookup** | Customers hate digging through emails for tracking numbers. | WhatsApp caller ID matches the order database. Tapping **Track Order** returns live FedEx tracking in under 1 second without typing. |
+| **2. Conversational Memory** | Customers ask vague follow-ups like *"Can I return it?"*. | The session state machine maintains active order context. If the item is still in transit, it politely explains store return policy. |
+| **3. Multi-Package Customer** | Shoppers with multiple active packages get confused by single-order responses. | Gateway detects 2 active packages (`#ORD-1004` & `#ORD-1005`) and sends interactive buttons for 1-tap disambiguation. |
+| **4. Brand-New Customer (0 Orders)** | Unknown numbers message support looking for help. | Graceful fallback informs the user that no orders match this phone number, prompting for an order number or human agent. |
+| **5. Gift / Cross-Phone (Anti-IDOR)** | Shoppers query an order placed under a spouse's phone or gift recipient. | Anti-IDOR security shield halts the query and demands the last 4 digits of the phone number on file (`6543`) before revealing details. |
+| **6. Delivered Return & PDF Label** | Returns require manual agent review and label printing delays. | Delivered package (`#ORD-1003`) is verified for return eligibility. The bot immediately renders a downloadable vector PDF label with a Code128 barcode. |
+| **7. Live Shopify Sync** | E-commerce stores need real-time data from their existing Shopify backends. | `ShopifyOrderAdapter` queries the Shopify Admin REST API, extracting real-time line items, prices, and fulfillment stages. |
+| **8. Human Takeover & 2-Way Chat** | Angry or complex customer requests require human empathy. | Typing `human` mutes the bot immediately (preventing bot spam) and connects the conversation to a live 2-way operator console. |
+
+---
+
+## 4. Quickstart & Installation
+
+### Prerequisites
+- **Python**: 3.11, 3.12, or 3.13
+- **uv** (recommended) or standard `pip`
+- **Docker & Docker Compose** (optional, for containerized deployment)
+
+---
 
 ### Option A: Local Run via `uv` (Recommended)
 
+[`uv`](https://github.com/astral-sh/uv) is an ultra-fast Python package manager that manages virtual environments and dependencies automatically.
+
 ```bash
-# 1. Clone & enter project
-cd projects/whatsapp-support-gateway
+# 1. Clone the repository and navigate to the project directory
+git clone https://github.com/your-username/whatsapp-support-gateway.git
+cd whatsapp-support-gateway
 
-# 2. Sync dependencies & run tests
+# 2. Install dependencies & development tools
 uv sync --all-extras
-uv run pytest tests/
 
-# 3. Launch Gateway Server
+# 3. Run the complete automated test suite (103 tests)
+uv run pytest
+
+# 4. Start the Gateway Development Server
 uv run uvicorn gateway.main:app --reload --port 8000
 ```
-Open **[http://localhost:8000/demo](http://localhost:8000/demo)** in your browser to access the **Interactive WhatsApp Phone Simulator & Real-Time Engine Cockpit**.
+
+Once running, navigate to:
+- **Interactive Dual-Pane Simulator**: [http://localhost:8000/demo](http://localhost:8000/demo)
+- **Built-in Recording Teleprompter PDF**: [http://localhost:8000/demo-script.pdf](http://localhost:8000/demo-script.pdf)
+- **System Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
 
-### Option B: Interactive Terminal Simulator
+### Option B: Terminal-Based CLI Simulator
 
-Test conversation flows directly from your shell without launching a web server:
+Test conversational flows and order lookups directly in your terminal without opening a web browser:
+
 ```bash
 uv run demo
+# or
+uv run simulator
 ```
-Sample interaction:
-```text
-👤 Customer: Where is my order #ORD-1001?
 
-🤖 WhatsApp Bot (18.4ms):
- 📦 Order Status: #ORD-1001
- • Status: SHIPPED
- • Carrier: FedEx
- • Tracking #: TRK-987654
- • Est. Delivery: 2026-09-15
- • Items: Wireless Noise-Canceling Headphones
+**Example CLI Interaction:**
+```text
+============================================================
+  WHATSAPP SUPPORT GATEWAY - TERMINAL SIMULATOR
+  Type your message, 'human' to escalate, or 'exit' to quit.
+============================================================
+
+👤 You (+15551234567): Where is my package?
+🤖 Bot (16.2ms):
+📦 Order Status: #ORD-1001
+• Status: SHIPPED
+• Carrier: FedEx (Tracking #: TRK-987654)
+• Est. Delivery: 2026-09-15
+• Items: Wireless Noise-Canceling Headphones ($189.50)
+
+👤 You (+15551234567): Can I return it?
+🤖 Bot (14.8ms):
+Order #ORD-1001 is currently in transit. Items must be delivered before a return can be initiated.
 ```
 
 ---
 
-### Option C: Containerized Deployment via Docker Compose
+### Option C: Containerized Run with Docker Compose
+
+Deploy the complete stack—including the Gateway service and a Redis container with persistent streams—in a single command:
 
 ```bash
 docker compose up -d
 ```
-Visit `http://localhost:8000/demo` or query health:
+
+Verify service health:
 ```bash
+# Check running containers
+docker compose ps
+
+# Check API health endpoint
 curl http://localhost:8000/health
 # {"status":"healthy","environment":"development","whatsapp_provider":"mock"}
 ```
 
----
-
-## 4. Production Configuration (`.env`)
-
-To connect to live Meta WhatsApp Cloud API credentials in production:
-
-```ini
-# Server Config
-PORT=8000
-ENVIRONMENT=production
-
-# Meta WhatsApp Cloud API Credentials
-WHATSAPP_PROVIDER=meta
-META_APP_SECRET=your_meta_app_secret_here
-META_ACCESS_TOKEN=your_system_user_access_token_here
-PHONE_NUMBER_ID=your_meta_phone_number_id_here
-WEBHOOK_VERIFY_TOKEN=your_secure_random_verify_token
-
-# AI / Open-Weight Model Provider
-LLM_PROVIDER=ollama
-LLM_BASE_URL=http://localhost:11434/v1
-LLM_MODEL=qwen2.5:7b
-
-# External Automation Webhook (n8n / Zapier)
-INTEGRATION_WEBHOOK_URL=https://n8n.yourdomain.com/webhook/escalation
+To stop the containers:
+```bash
+docker compose down
 ```
 
 ---
 
-## 5. Tailored Upwork Proposal Snippet
+## 5. Testing & Code Rigor
 
-When bidding on client contracts seeking WhatsApp API chatbots or customer service automation, use this battle-tested proposal:
+Every component in this repository is built test-first following strict test-driven development (TDD), full type safety, and clean linting standards.
+
+```bash
+# 1. Run all 103 automated tests (unit + integration)
+uv run pytest -v
+
+# 2. Strict type verification across all source files (mypy)
+uv run mypy src tests
+
+# 3. Linter & code formatting check (ruff)
+uv run ruff check .
+```
+
+### Test Suite Breakdown (103 Tests)
+- **Unit Tests (`tests/unit/`)**:
+  - `test_webhook_handshake.py`: Hub verification challenge & query token verification.
+  - `test_signature.py`: HMAC-SHA256 signature validation, tampering rejection, replay defense.
+  - `test_idempotency.py`: WAMID cache deduplication preventing Meta webhook retry storms.
+  - `test_phone_verification.py`: Anti-IDOR 4-digit PIN challenge and order ownership protection.
+  - `test_interactive_buttons.py`: Multi-package disambiguation and button payload dispatch.
+  - `test_pdf_generator.py`: ReportLab vector return label rendering and Code128 barcode validation.
+  - `test_multiturn_memory.py`: Context retention across conversational turns (e.g., *"Can I return it?"*).
+  - `test_shopify_adapter.py`: Shopify Admin REST API adapter parsing and fixture fallback.
+  - `test_redis_queue.py`: Redis Streams consumer groups, `XADD`, `XREADGROUP`, and acknowledgment.
+  - `test_state_machine.py`: Finite state transitions (`MENU` $\rightarrow$ `ACTIVE_BOT` $\rightarrow$ `ESCALATED_HUMAN`).
+- **Integration Tests (`tests/integration/`)**:
+  - `test_e2e_pipeline.py`: End-to-end inbound webhook to outbound message dispatch pipeline.
+  - `test_websocket_chat.py`: Real-time 2-way operator desk connection, agent message injection, and bot silencing.
+  - `test_demo_api.py`: Dual-pane web simulator endpoints, session resets, and live event telemetry streams.
+
+---
+
+## 6. API Endpoints Reference
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Gateway health check (environment, provider status, queue mode). |
+| `GET` | `/webhook` | Meta WhatsApp Cloud API webhook verification challenge handshake. |
+| `POST` | `/webhook` | Inbound WhatsApp webhook ingestion (sub-30ms HMAC validation & queue dispatch). |
+| `GET` | `/demo` | Interactive dual-pane web simulator & live engine telemetry cockpit. |
+| `POST` | `/demo/simulate` | Dispatches simulated customer messages into the engine. |
+| `POST` | `/demo/reset/{phone}` | Resets session state, active order, and chat history for a customer phone. |
+| `GET` | `/demo/events` | Server-Sent Events (SSE) stream for real-time engine telemetry. |
+| `GET` | `/demo-script.pdf` | Serves the 4-minute video recording guide & teleprompter PDF. |
+| `GET` | `/returns/{return_id}/label.pdf` | Dynamically serves generated vector PDF return shipping labels. |
+| `WS` | `/ws/operator/{phone}` | Two-way WebSocket bridge for human operator console. |
+| `POST` | `/operator/send` | Dispatches human agent replies directly into the customer's WhatsApp chat. |
+| `POST` | `/operator/resolve/{phone}` | Unmutes the automated bot and marks customer inquiry as resolved. |
+
+---
+
+## 7. Configuration & Environment Variables
+
+Copy the example configuration to set up your environment:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `PORT` | `8000` | Gateway HTTP server port. |
+| `ENVIRONMENT` | `development` | Environment mode (`development` or `production`). |
+| `WHATSAPP_PROVIDER` | `mock` | Outbound channel provider (`mock` or `meta`). |
+| `META_APP_SECRET` | `dev_app_secret` | Meta App Secret for validating inbound HMAC-SHA256 signatures. |
+| `META_ACCESS_TOKEN` | `""` | System User Permanent Access Token for Meta Graph API v20.0+. |
+| `PHONE_NUMBER_ID` | `""` | Meta WhatsApp Business Phone Number ID. |
+| `WEBHOOK_VERIFY_TOKEN` | `dev_verify_token` | Custom secret token configured in Meta App Dashboard for webhook verification. |
+| `QUEUE_TYPE` | `in_process` | Ingestion queue implementation (`in_process` or `redis`). |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL when `QUEUE_TYPE=redis`. |
+| `LLM_PROVIDER` | `mock` | Language model provider (`mock`, `ollama`, or `openai`). |
+| `LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible API base URL (Ollama, vLLM, Groq). |
+| `LLM_MODEL` | `qwen2.5:7b` | Model name to query for semantic tool-calling fallback. |
+| `INTEGRATION_WEBHOOK_URL` | `""` | Outbound escalation webhook destination (n8n, Make, Zapier, Zendesk). |
+
+---
+
+## 8. Tailored Upwork Proposal Snippet
+
+When bidding on client contracts seeking WhatsApp Business API integration, AI customer support chatbots, or e-commerce automation, use this proposal:
 
 ```markdown
 Hi [Client Name],
 
-I noticed your job post regarding WhatsApp Business API integration and customer service automation.
+I noticed your job post regarding WhatsApp Business API integration and customer support automation.
 
-Most WhatsApp bots fail in production for two reasons:
-1. Webhook Timeouts: Meta requires an HTTP 200 OK response within 3 seconds. When backend CRM lookups or AI responses take longer, Meta retries, resulting in duplicate message spam to your customers.
-2. Uncontrolled AI: Standard prompt wrappers hallucinate order statuses and cannot safely execute database lookups or respect 24-hour customer care windows.
+Most WhatsApp customer service bots fail in production due to three specific architectural flaws:
+1. Webhook Retry Storms: Meta requires an HTTP 200 OK response within 3 seconds. When backend CRM lookups or AI agents take longer, Meta retries the webhook every few seconds, flooding customers with duplicate messages.
+2. Insecure Data Access (IDOR): Naive bots reveal customer shipping addresses and order contents whenever an arbitrary order number is typed into chat.
+3. Chatbot Lock-in: When a customer is frustrated and asks for a human, unmanaged bots keep replying and spamming the conversation.
 
-To solve this, I architect WhatsApp support gateways using an asynchronous ingestion queue (guaranteeing sub-30ms webhook acknowledgments) and schema-bounded tool calling for database lookups (order status, fulfillment, returns). When customers ask for a human or report critical issues, the system automatically mutes the bot, logs the transcript, and fires an event to your helpdesk or n8n/Zapier workflows.
+To solve this, I architect WhatsApp support gateways using:
+• Sub-30ms Ingestion Decoupling: Immediately validates HMAC-SHA256 signatures, deduplicates messages by WAMID, enqueues payloads, and returns HTTP 200 OK.
+• Phone-Based Zero-Login Identity: Automatic order lookup using Meta's protocol-authenticated phone numbers, eliminating login friction.
+• Multi-Package Disambiguation: Interactive buttons for customers with multiple active shipments.
+• Anti-IDOR Security: Automatic 4-digit PIN verification before sharing details on orders from another phone number.
+• Automated Returns: Real-time return policy validation and programmatic vector PDF shipping labels with Code128 barcodes.
+• Stateful Human Escalation: Mutes the bot instantly upon human handoff and connects via a live two-way WebSocket operator desk.
 
-I have already built and containerized a live, tested reference implementation matching this exact architecture:
-- GitHub: [Your Portfolio Link]
-- Stack: Python (FastAPI), Meta Graph API v20.0+, Pydantic V2, Redis Streams, WebSocket Human Takeover, ReportLab PDF, Docker.
-- Test Coverage: 94 automated unit & integration tests covering HMAC signature verification, WAMID deduplication, Redis streams, real-time WebSockets, and stateful human escalation.
+I have already built, tested, and containerized an enterprise reference implementation:
+• Stack: Python (FastAPI), Meta Graph API v20.0+, Redis Streams, ReportLab Vector PDF, Pydantic V2, Docker.
+• Test Rigor: 103 automated unit and integration tests passing in under 2 seconds, with strict type checking and zero lint warnings.
+• Live Demo: Includes an interactive web simulator and live telemetry cockpit demonstrating all flows with zero credentials needed.
 
-I can have your WhatsApp API integration, automated order routing, and helpdesk handoff operational in days. 
+I can have your WhatsApp API integration, order lookup, and helpdesk routing operational in days.
 
-Are you available for a quick 10-minute call to discuss your current backend systems and customer messaging volume?
+Are you available for a quick 10-minute call to discuss your current store volume and backend systems?
 
 Best regards,
 [Your Name]
 ```
+
+---
+
+## 9. License
+
+Distributed under the **MIT License**. Free for commercial and private use.
