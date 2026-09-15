@@ -198,7 +198,7 @@ def build_pdf():
             "duration": "25s",
             "action": "Hover mouse over phone on the left, point to <b>Simulated Phone</b> in the top bar, then point to <b>Telemetry Dashboard</b> on the right.",
             "visual": "Browser at <code>localhost:8000/demo</code>. Left: WhatsApp simulator. Top: Phone presets. Right: Live dashboard showing sub-20ms speed, security checks, bot state, and real-time server logs.",
-            "voice": "\"Welcome to the WhatsApp Support Gateway demo. In this project, I built an automated customer service system for e-commerce stores on WhatsApp. On the left is our WhatsApp mobile simulator. At the top, we have a phone number selector, which lets us test different customer numbers. And on the right is our live telemetry dashboard, which monitors response times, message security, and real-time server logs.\""
+            "voice": "\"Hi everyone! This is my WhatsApp customer support bot for online stores. On the left, we have a phone showing WhatsApp. At the top, we can switch between different customer phone numbers to test different situations. And on the right, our live dashboard shows response speed and server logs.\""
         },
         {
             "step": "STEP 1: SINGLE ORDER AUTO-LOOKUP (ZERO TYPING)",
@@ -206,7 +206,7 @@ def build_pdf():
             "duration": "20s",
             "action": "With simulated phone <b>15551234567</b>, click button: <b>📦 Track Order</b> (or type <code>Track</code>).",
             "visual": "Message sent. Blue checkmarks appear, typing indicator blinks, and bot instantly returns tracking for order #ORD-1001 with FedEx tracking.",
-            "voice": "\"First, notice how customer identity works. In real life, WhatsApp verifies the caller's phone number with every message. So when the customer taps 'Track Order', the system looks up their number in the database automatically. Notice the blue checkmarks and typing indicator—their FedEx tracking details appear in under a second without them ever having to type an order number.\""
+            "voice": "\"Let's test our first customer. When they tap 'Track Order', the bot looks up their phone number right away. The customer never needs to type an order number. In less than a second, the bot finds their order and displays the FedEx tracking details.\""
         },
         {
             "step": "STEP 2: CONVERSATIONAL MEMORY & RETURN POLICY",
@@ -214,7 +214,7 @@ def build_pdf():
             "duration": "20s",
             "action": "Click chip: <b>2. Can I return it?</b> (or type <code>Can I return it?</code>).",
             "visual": "Bot remembers order #ORD-1001. Because the package is in transit, it explains delivery is required before return.",
-            "voice": "\"Next, the bot has conversational context. When the customer asks 'Can I return it?', the bot remembers that they are talking about order ten-oh-one. Because this order is still on the delivery truck, the bot explains our store policy: an item has to be delivered before you can start a return.\""
+            "voice": "\"Now the customer asks: 'Can I return it?' Notice that the bot remembers the order we just talked about. Since the package is still on the delivery truck, the bot explains that it must be delivered before you can return it.\""
         },
         {
             "step": "STEP 3: MULTI-PACKAGE CUSTOMER (INTERACTIVE BUTTONS)",
@@ -222,7 +222,7 @@ def build_pdf():
             "duration": "25s",
             "action": "Click purple chip: <b>📦 Demo: Multi-Package</b>, then tap interactive button <b>[📦 #ORD-1004]</b>.",
             "visual": "Bot finds 2 active packages for phone 15557778899. Tapping #ORD-1004 instantly pulls up live DHL tracking details.",
-            "voice": "\"Now, what if a customer has more than one package on the way? Here we switch to a customer who has two active orders. When they tap 'Track Order', instead of getting confused, the bot lists both packages as clickable buttons: order ten-oh-four and order ten-oh-five. Tapping order ten-oh-four instantly pulls up its live DHL tracking status and estimated delivery date.\""
+            "voice": "\"What if a customer ordered more than one item? Let's switch to a customer with two packages. When they tap 'Track Order', the bot shows two buttons—one for each package. The customer taps the one they want—like Order ten-oh-four—and gets the DHL tracking details right away.\""
         },
         {
             "step": "STEP 4: BRAND NEW CUSTOMER (0 ORDERS ON FILE)",
@@ -230,7 +230,7 @@ def build_pdf():
             "duration": "25s",
             "action": "In top dropdown, select: <b>New Customer (0 Orders)</b> (15550000000), click <b>🔄 Reset Session</b>, then tap <b>📦 Track Order</b>.",
             "visual": "Bot gracefully replies that no orders were found under this WhatsApp number and invites them to enter an order number.",
-            "voice": "\"What happens if a brand new customer messages us? We select our new customer number with zero orders on file. The bot handles this gracefully: it lets them know no orders were found under this WhatsApp number, and invites them to type an order number in case they used a different phone or email at checkout.\""
+            "voice": "\"Now let's test a brand new customer who has never ordered before. When they tap 'Track Order', the bot politely says no orders were found for this number. It also asks them to type their order number in case they used a different phone when buying.\""
         },
         {
             "step": "STEP 5: GIFT ORDER & 4-DIGIT SECURITY PIN",
@@ -238,7 +238,7 @@ def build_pdf():
             "duration": "25s",
             "action": "In top dropdown, switch back to: <b>Single Order (ORD-1001)</b>.<br/>Click chip <b>3. Track #ORD-1002</b>, then chip <b>4. Verify: 6543</b>.",
             "visual": "Bot intercepts query for another phone's order, asks for last 4 digits. Entering 6543 confirms identity and unlocks the order status.",
-            "voice": "\"Sometimes someone buys a gift or uses a different phone. If a customer asks about an order belonging to another number, our security system steps in. To protect privacy, it asks for the last four digits of the phone number on that order. Once the customer enters six-five-four-three, the bot verifies their identity and displays the order status.\""
+            "voice": "\"What if someone bought a gift, or is using a friend's phone? If they ask for an order from another phone number, the bot protects privacy. It asks for the last four digits of the phone number on that order. When they enter six-five-four-three, the bot confirms who they are and shows the order.\""
         },
         {
             "step": "STEP 6: DELIVERED RETURN & INSTANT PDF SHIPPING LABEL",
@@ -246,7 +246,7 @@ def build_pdf():
             "duration": "30s",
             "action": "Click chip <b>5. Return #ORD-1003</b>, chip <b>6. Verify: 2233</b>, then <b>click the PDF Card</b> in the phone.",
             "visual": "Bot verifies delivered order, approves return, and attaches a downloadable PDF label. Clicking opens the vector PDF label with a scannable barcode.",
-            "voice": "\"Now let's look at returns. Order ten-oh-three has already been delivered. The bot confirms return eligibility, approves it, and generates a printable return label right inside WhatsApp. Clicking the document card opens a ready-to-print vector PDF shipping label, complete with a scannable barcode and return instructions.\""
+            "voice": "\"Next, let's look at returns. Order ten-oh-three was already delivered. So the bot approves the return immediately. It even sends a return shipping label right in the chat. When you click the card, it opens a clean PDF label with a barcode ready to print.\""
         },
         {
             "step": "STEP 7: LIVE SHOPIFY STORE SYNC",
@@ -254,7 +254,7 @@ def build_pdf():
             "duration": "20s",
             "action": "(Return to demo tab) Click chip: <b>7. Shopify #1001</b>.",
             "visual": "Telemetry logs <code>ShopifyOrderAdapter</code>. Bot displays live item names, prices, and fulfillment status directly from Shopify.",
-            "voice": "\"The gateway also connects directly to Shopify. With a single setting, the bot queries Shopify's live store data, returning exact item names, pricing, and fulfillment stages in real time.\""
+            "voice": "\"The bot also connects directly to Shopify stores. Here, it pulls live product names, prices, and shipping status straight from Shopify in real time.\""
         },
         {
             "step": "STEP 8: HUMAN SUPPORT & LIVE 2-WAY CHAT",
@@ -262,7 +262,7 @@ def build_pdf():
             "duration": "30s",
             "action": "Click chip <b>8. Talk to Human</b>. In phone, type <b>Where is my refund?</b> (bot stays silent). In Operator Station, type reply and click <b>Send as Agent</b>.",
             "visual": "Bot mutes immediately. Customer's message streams to Operator Station. Agent's reply appears in WhatsApp with an <b>Agent Sarah</b> badge.",
-            "voice": "\"When a customer needs human help, they simply tap 'Talk to Human'. The bot mutes itself immediately so it won't interrupt, and opens our live Operator Station on the right. Notice that when the customer sends another message, the bot stays completely silent—no automated spam. The agent types back from the dashboard, and their reply appears instantly on WhatsApp with an Agent badge.\""
+            "voice": "\"If a customer wants to talk to a real person, they tap 'Talk to Human'. The bot mutes itself so it doesn't get in the way. On the right, a live chat opens for human support agents. When the customer sends a message, the bot stays quiet. The human agent replies from the dashboard, and it goes straight to WhatsApp.\""
         },
         {
             "step": "STEP 9: RESOLVING & UNMUTING THE BOT",
@@ -270,7 +270,7 @@ def build_pdf():
             "duration": "15s",
             "action": "Click button: <b>Unmute Bot / Resolve</b>.",
             "visual": "Operator Station closes. Session state turns back to green <b>ACTIVE_BOT</b>.",
-            "voice": "\"Once the issue is solved, the agent clicks 'Unmute Bot'. The session returns to automated bot mode, ready for future customer questions.\""
+            "voice": "\"When the agent is done helping, they click 'Unmute Bot'. The bot turns back on, ready to answer new questions automatically.\""
         },
         {
             "step": "STEP 10: PRODUCTION RIGOR & 103 AUTOMATED TESTS",
@@ -278,7 +278,7 @@ def build_pdf():
             "duration": "15s",
             "action": "Switch to terminal window and run: <b>uv run pytest</b>.",
             "visual": "All <b>103 automated tests pass green</b> in under 1.6 seconds.",
-            "voice": "\"Finally, everything is backed by automated tests. In the terminal, running pytest shows all 103 unit and integration tests passing in under two seconds. Thank you for watching!\""
+            "voice": "\"Finally, in the terminal, we can run our automated tests. All 103 tests pass in under two seconds, showing the code is clean and reliable. Thank you for watching!\""
         },
     ]
 
