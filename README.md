@@ -37,7 +37,7 @@ flowchart TD
     subgraph ClientLayer ["WhatsApp & Meta Cloud"]
         WA["Customer on WhatsApp"]
         MetaAPI["Meta WhatsApp Cloud API v20.0+"]
-        WA <-->|"End-to-End Encrypted Messages"| MetaAPI
+        WA ---|"End-to-End Encrypted Messages"| MetaAPI
     end
 
     subgraph GatewayCore ["WhatsApp Support Gateway Service"]
@@ -61,9 +61,9 @@ flowchart TD
         end
 
         subgraph Repositories ["4. Data Adapters & PDF Generator"]
-            OrderRepo[("Order Repository")]
+            OrderRepo["Order Repository (Database)"]
             ShopifyAdapter["Shopify Admin REST API"]
-            SessionStore[("Session Store")]
+            SessionStore["Session Store (SQLite/Memory)"]
             PDFGen["ReportLab Vector PDF Generator"]
         end
 
@@ -88,12 +88,12 @@ flowchart TD
     RedisQueue --> Processor
 
     Processor --> Router
-    Processor <--> SM
-    SM <--> SessionStore
+    Processor --> SM
+    SM --> SessionStore
 
     Router --> ToolAgent
-    ToolAgent <--> OrderRepo
-    ToolAgent <--> ShopifyAdapter
+    ToolAgent --> OrderRepo
+    ToolAgent --> ShopifyAdapter
     ToolAgent --> PDFGen
 
     Router --> ChannelPort
@@ -103,7 +103,7 @@ flowchart TD
 
     SM -->|"State: ESCALATED_HUMAN"| EventWebhook
     EventWebhook -->|"Webhook POST"| WSOperator
-    WSOperator <-->|"2-Way Live WebSocket"| ChannelPort
+    WSOperator --> ChannelPort
 ```
 
 ---
