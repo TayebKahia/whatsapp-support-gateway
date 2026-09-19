@@ -11,6 +11,20 @@
 
 ---
 
+## 🎥 Live Demonstration Video
+
+https://github.com/TayebKahia/whatsapp-support-gateway/releases/download/v1.0.0/project.mp4
+
+> **In this 4-minute system demonstration:**
+> - **Zero-Login Identity**: Instant order lookup by WhatsApp caller ID without passwords.
+> - **Multi-Package Disambiguation**: Interactive buttons for shoppers with multiple active shipments.
+> - **Anti-IDOR Security Shield**: 4-digit PIN challenge protecting sensitive customer data.
+> - **Automated Returns**: Dynamic vector PDF shipping labels with Code128 barcodes.
+> - **Shopify Admin API Sync**: Real-time product, price, and fulfillment stage sync.
+> - **Human Takeover**: Instant bot muting and live 2-way WebSocket operator console.
+
+---
+
 ## 1. Executive Summary & Architecture
 
 E-commerce businesses losing customer orders over slow WhatsApp response times face two common pitfalls in production:
