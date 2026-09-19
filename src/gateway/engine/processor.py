@@ -77,9 +77,7 @@ class MessageProcessor:
             # Bare digits like "6543" or "2233" are verification PINs, not order IDs.
             has_order_keyword = any(kw in clean_body for kw in ("ord", "order", "#"))
             extracted_new_order = (
-                self.agent.extract_order_id(event.body, session=None)
-                if has_order_keyword
-                else None
+                self.agent.extract_order_id(event.body, session=None) if has_order_keyword else None
             )
             is_different_order = (
                 extracted_new_order is not None
