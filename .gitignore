@@ -38,7 +38,9 @@ htmlcov/
 *.scratch
 scratch/
 
-# AI Instructions, Prompts & Skills
+# AI Instructions, Prompts, Docs & Scripts
+docs/
+scripts/
 JOB_POST.md
 docs/JOB_POST.md
 AGENTS.md
