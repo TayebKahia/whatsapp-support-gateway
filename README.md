@@ -1,12 +1,17 @@
-# WhatsApp Support Gateway (Meta Cloud API + Bounded AI Tool-Calling)
+# WhatsApp Support Gateway
+
+[![CI Pipeline](https://github.com/TayebKahia/whatsapp-support-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/TayebKahia/whatsapp-support-gateway/actions)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Pydantic V2](https://img.shields.io/badge/Pydantic-v2.8+-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests: 103 Passing](https://img.shields.io/badge/Tests-103%20Passing-brightgreen)](https://github.com/TayebKahia/whatsapp-support-gateway)
 
 > **Commercial-grade, high-concurrency customer support automation for e-commerce brands on WhatsApp. Engineered with sub-30ms webhook acknowledgment, WAMID idempotency, phone-based zero-login identity, multi-package disambiguation, anti-IDOR security challenges, programmatic vector PDF return labels, and stateful human escalation.**
 
-
-
 ---
 
-## 1. Executive Summary & Business Problem
+## 1. Executive Summary & Architecture
 
 E-commerce businesses losing customer orders over slow WhatsApp response times face two common pitfalls in production:
 
@@ -136,19 +141,21 @@ flowchart TD
 git clone https://github.com/your-username/whatsapp-support-gateway.git
 cd whatsapp-support-gateway
 
-# 2. Install dependencies & development tools
+# 2. Configure environment
+cp .env.example .env
+
+# 3. Install dependencies & development tools
 uv sync --all-extras
 
-# 3. Run the complete automated test suite (103 tests)
+# 4. Run the complete automated test suite (103 tests)
 uv run pytest
 
-# 4. Start the Gateway Development Server
+# 5. Start the Gateway Development Server
 uv run uvicorn gateway.main:app --reload --port 8000
 ```
 
 Once running, navigate to:
 - **Interactive Dual-Pane Simulator**: [http://localhost:8000/demo](http://localhost:8000/demo)
-- **Built-in Recording Teleprompter PDF**: [http://localhost:8000/demo-script.pdf](http://localhost:8000/demo-script.pdf)
 - **System Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
@@ -255,7 +262,6 @@ uv run ruff check .
 | `POST` | `/demo/simulate` | Dispatches simulated customer messages into the engine. |
 | `POST` | `/demo/reset/{phone}` | Resets session state, active order, and chat history for a customer phone. |
 | `GET` | `/demo/events` | Server-Sent Events (SSE) stream for real-time engine telemetry. |
-| `GET` | `/demo-script.pdf` | Serves the 4-minute video recording guide & teleprompter PDF. |
 | `GET` | `/returns/{return_id}/label.pdf` | Dynamically serves generated vector PDF return shipping labels. |
 | `WS` | `/ws/operator/{phone}` | Two-way WebSocket bridge for human operator console. |
 | `POST` | `/operator/send` | Dispatches human agent replies directly into the customer's WhatsApp chat. |
@@ -274,7 +280,7 @@ cp .env.example .env
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `PORT` | `8000` | Gateway HTTP server port. |
-| `ENVIRONMENT` | `development` | Environment mode (`development` or `production`). |
+| `ENVIRONMENT` | `development` | Environment mode (`development`, `staging`, `production`, `test`). |
 | `WHATSAPP_PROVIDER` | `mock` | Outbound channel provider (`mock` or `meta`). |
 | `META_APP_SECRET` | `dev_app_secret` | Meta App Secret for validating inbound HMAC-SHA256 signatures. |
 | `META_ACCESS_TOKEN` | `""` | System User Permanent Access Token for Meta Graph API v20.0+. |
@@ -282,13 +288,16 @@ cp .env.example .env
 | `WEBHOOK_VERIFY_TOKEN` | `dev_verify_token` | Custom secret token configured in Meta App Dashboard for webhook verification. |
 | `QUEUE_TYPE` | `in_process` | Ingestion queue implementation (`in_process` or `redis`). |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL when `QUEUE_TYPE=redis`. |
-| `LLM_PROVIDER` | `mock` | Language model provider (`mock`, `ollama`, or `openai`). |
+| `LLM_PROVIDER` | `mock` | Language model provider (`mock`, `ollama`, `groq`, or `openai`). |
 | `LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible API base URL (Ollama, vLLM, Groq). |
 | `LLM_MODEL` | `qwen2.5:7b` | Model name to query for semantic tool-calling fallback. |
+| `ORDER_REPOSITORY_TYPE` | `in_memory` | Order storage engine (`in_memory` or `shopify`). |
+| `SHOPIFY_STORE_URL` | `""` | Shopify store domain (`https://store.myshopify.com`). |
+| `SHOPIFY_ACCESS_TOKEN` | `""` | Shopify Admin API access token (`shpat_...`). |
 | `INTEGRATION_WEBHOOK_URL` | `""` | Outbound escalation webhook destination (n8n, Make, Zapier, Zendesk). |
 
 ---
 
 ## 8. License
 
-Distributed under the **MIT License**. Free for commercial and private use.
+Distributed under the **MIT License**. Free for commercial and private use. See [LICENSE](LICENSE) for details.
