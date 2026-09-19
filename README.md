@@ -34,55 +34,55 @@ The **WhatsApp Support Gateway** solves both problems with an enterprise-ready, 
 
 ```mermaid
 flowchart TD
-    subgraph ClientLayer [WhatsApp & Meta Cloud]
-        WA[Customer on WhatsApp]
-        MetaAPI[Meta WhatsApp Cloud API v20.0+]
-        WA <-->|End-to-End Encrypted Messages| MetaAPI
+    subgraph ClientLayer ["WhatsApp & Meta Cloud"]
+        WA["Customer on WhatsApp"]
+        MetaAPI["Meta WhatsApp Cloud API v20.0+"]
+        WA <-->|"End-to-End Encrypted Messages"| MetaAPI
     end
 
-    subgraph GatewayCore [WhatsApp Support Gateway Service]
-        subgraph IngestionBoundary [1. Ingestion Boundary (Sub-30ms)]
-            WH[POST /webhook]
-            HMAC[HMAC SHA-256 Validator]
-            Idem[Idempotency Filter (WAMID)]
+    subgraph GatewayCore ["WhatsApp Support Gateway Service"]
+        subgraph IngestionBoundary ["1. Ingestion Boundary (Sub-30ms)"]
+            WH["POST /webhook"]
+            HMAC["HMAC SHA-256 Validator"]
+            Idem["Idempotency Filter (WAMID)"]
         end
 
-        subgraph QueueLayer [2. Asynchronous Queue Layer]
-            QueuePort[QueuePort Interface]
-            InProcQueue[In-Process Async Worker Pool]
-            RedisQueue[Redis Streams Consumer Group]
+        subgraph QueueLayer ["2. Asynchronous Queue Layer"]
+            QueuePort["QueuePort Interface"]
+            InProcQueue["In-Process Async Worker Pool"]
+            RedisQueue["Redis Streams Consumer Group"]
         end
 
-        subgraph CoreEngine [3. Core Conversational Engine]
-            Processor[Event Processor & Identity Resolver]
-            Router[Intent Router]
-            SM[Session State Machine]
-            ToolAgent[Bounded Tool Agent]
+        subgraph CoreEngine ["3. Core Conversational Engine"]
+            Processor["Event Processor & Identity Resolver"]
+            Router["Intent Router"]
+            SM["Session State Machine"]
+            ToolAgent["Bounded Tool Agent"]
         end
 
-        subgraph Repositories [4. Data Adapters & PDF Generator]
-            OrderRepo[(Order Repository)]
-            ShopifyAdapter[Shopify Admin REST API]
-            SessionStore[(Session Store)]
-            PDFGen[ReportLab Vector PDF Generator]
+        subgraph Repositories ["4. Data Adapters & PDF Generator"]
+            OrderRepo[("Order Repository")]
+            ShopifyAdapter["Shopify Admin REST API"]
+            SessionStore[("Session Store")]
+            PDFGen["ReportLab Vector PDF Generator"]
         end
 
-        subgraph OutboundBoundary [5. Outbound Channels & Human Takeover]
-            ChannelPort[WhatsAppChannelPort]
-            MetaChannel[Meta Graph API Channel]
-            MockChannel[Mock Test Channel]
-            WSOperator[WebSocket Human Operator Desk]
-            EventWebhook[Outbound Event Dispatcher (n8n/Zendesk)]
+        subgraph OutboundBoundary ["5. Outbound Channels & Human Takeover"]
+            ChannelPort["WhatsAppChannelPort"]
+            MetaChannel["Meta Graph API Channel"]
+            MockChannel["Mock Test Channel"]
+            WSOperator["WebSocket Human Operator Desk"]
+            EventWebhook["Outbound Event Dispatcher (n8n/Zendesk)"]
         end
     end
 
-    MetaAPI -->|Inbound Webhook Event| WH
+    MetaAPI -->|"Inbound Webhook Event"| WH
     WH --> HMAC
-    HMAC -->|Valid Signature| Idem
-    Idem -->|Unique WAMID| QueuePort
+    HMAC -->|"Valid Signature"| Idem
+    Idem -->|"Unique WAMID"| QueuePort
     QueuePort -.-> InProcQueue
     QueuePort -.-> RedisQueue
-    WH -->|HTTP 200 OK (< 25ms)| MetaAPI
+    WH -->|"HTTP 200 OK (sub-25ms)"| MetaAPI
 
     InProcQueue --> Processor
     RedisQueue --> Processor
@@ -99,11 +99,11 @@ flowchart TD
     Router --> ChannelPort
     ChannelPort -.-> MetaChannel
     ChannelPort -.-> MockChannel
-    MetaChannel -->|Outbound Text / Buttons / Documents| MetaAPI
+    MetaChannel -->|"Outbound Text / Buttons / Documents"| MetaAPI
 
-    SM -->|State: ESCALATED_HUMAN| EventWebhook
-    EventWebhook -->|Webhook POST| WSOperator
-    WSOperator <-->|2-Way Live WebSocket| ChannelPort
+    SM -->|"State: ESCALATED_HUMAN"| EventWebhook
+    EventWebhook -->|"Webhook POST"| WSOperator
+    WSOperator <-->|"2-Way Live WebSocket"| ChannelPort
 ```
 
 ---
