@@ -581,12 +581,12 @@
     <div class="cockpit-column">
       <div class="metrics-grid">
         <div class="metric-card">
-          <span class="metric-title">Webhook Latency</span>
-          <div class="metric-value" id="valLatency">18 <span class="metric-unit">ms</span></div>
+          <span class="metric-title">Processing Time</span>
+          <div class="metric-value" id="valLatency">– <span class="metric-unit">ms</span></div>
         </div>
         <div class="metric-card">
-          <span class="metric-title">HMAC Security</span>
-          <div class="metric-value badge-active" id="valHmac">VALID</div>
+          <span class="metric-title">HMAC Check</span>
+          <div class="metric-value" id="valHmac">SKIPPED</div>
         </div>
         <div class="metric-card">
           <span class="metric-title">Intent Detected</span>
@@ -821,11 +821,11 @@
         appendLog("RECEIPT", "tag-green", `Marked message as READ (status: "read", blue ticks acknowledged)`);
 
         // Update metrics
-        document.getElementById("valLatency").innerHTML = `${Math.round(data.latency_ms)} <span class="metric-unit">ms</span>`;
+        document.getElementById("valLatency").innerHTML = `${data.processing_ms.toFixed(1)} <span class="metric-unit">ms</span>`;
         document.getElementById("valIntent").innerText = data.intent;
         document.getElementById("valState").innerText = data.session_status;
 
-        appendLog("SECURITY", "tag-green", `HMAC-SHA256 signature verified (WAMID: ${data.wamid.slice(0, 16)}...)`);
+        appendLog("SECURITY", "tag-blue", `HMAC check ${data.signature_check}: the simulator bypasses POST /webhook, where real signatures are verified`);
         appendLog("ROUTER", "tag-blue", `Intent classified: ${data.intent}`);
 
         if (data.session_status === "ESCALATED_HUMAN") {

@@ -1,4 +1,5 @@
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ def create_demo_router(
     order_repo: OrderRepository | None = None,
     session_store: SessionStore | None = None,
     processor: MessageProcessor | None = None,
+    clock: Callable[[], float] = time.perf_counter,
 ) -> APIRouter:
     router = APIRouter()
 
@@ -60,7 +62,7 @@ def create_demo_router(
 
     @router.post("/demo/send")
     async def handle_demo_send(req: DemoSendMessageRequest) -> dict[str, Any]:
-        start = time.perf_counter()
+        start = clock()
         wamid = f"wamid.DEMO_{int(time.time() * 1000)}"
 
         # Clear mock channel before processing to capture new replies
@@ -79,7 +81,7 @@ def create_demo_router(
 
         # Execute through processor
         await proc.process_event(event)
-        latency_ms = (time.perf_counter() - start) * 1000
+        processing_ms = (clock() - start) * 1000
 
         # Retrieve updated session state
         session = store.get_session(req.phone_number)
@@ -107,8 +109,9 @@ def create_demo_router(
         return {
             "status": "ok",
             "wamid": wamid,
-            "latency_ms": max(latency_ms, 12.0),  # Realistic baseline display
-            "signature_valid": True,
+            "processing_ms": processing_ms,
+            # The demo path bypasses /webhook, so HMAC verification never runs here.
+            "signature_check": "skipped",
             "intent": intent.value,
             "session_status": session.status.value,
             "bot_reply": bot_reply,

@@ -1,6 +1,8 @@
 import pytest
+from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+from gateway.api.demo import create_demo_router
 from gateway.main import create_app
 
 
@@ -30,13 +32,13 @@ async def test_demo_send_and_telemetry() -> None:
         data = response.json()
         assert data["status"] == "ok"
         assert data["wamid"].startswith("wamid.")
-        assert data["signature_valid"] is True
+        assert data["signature_check"] == "skipped"
         assert data["intent"] == "ORDER_QUERY"
         assert "ORD-1001" in data["bot_reply"]
         assert "buttons" in data
         assert data["buttons"] is not None
         assert any(b["id"] == "btn_return" for b in data["buttons"])
-        assert data["latency_ms"] > 0
+        assert data["processing_ms"] > 0
         assert data["session_status"] == "ACTIVE_BOT"
 
 
@@ -129,3 +131,29 @@ async def test_demo_reset_session() -> None:
         # Step 3: Verify clean session
         clean_resp = await client.get(f"/demo/session/{phone}")
         assert len(clean_resp.json()["transcript"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_demo_reports_measured_processing_time_without_floor() -> None:
+    # A fake clock makes the measured duration exactly 3 ms; the demo must report it unaltered.
+    ticks = iter([100.0, 100.003])
+    app = FastAPI()
+    app.include_router(create_demo_router(clock=lambda: next(ticks)))
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/demo/send", json={"message": "hi"})
+        assert response.status_code == 200
+        assert response.json()["processing_ms"] == pytest.approx(3.0)
+        assert "latency_ms" not in response.json()
+
+
+@pytest.mark.asyncio
+async def test_demo_does_not_claim_a_signature_check_it_never_ran() -> None:
+    # /demo/send bypasses /webhook, so no HMAC verification happens on this path.
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/demo/send", json={"message": "hi"})
+        data = response.json()
+        assert data["signature_check"] == "skipped"
+        assert "signature_valid" not in data

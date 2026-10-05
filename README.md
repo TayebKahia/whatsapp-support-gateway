@@ -5,9 +5,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Pydantic V2](https://img.shields.io/badge/Pydantic-v2.8+-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 103 Passing](https://img.shields.io/badge/Tests-103%20Passing-brightgreen)](https://github.com/TayebKahia/whatsapp-support-gateway)
+[![Tests: 105 Passing](https://img.shields.io/badge/Tests-105%20Passing-brightgreen)](https://github.com/TayebKahia/whatsapp-support-gateway)
 
-> **Commercial-grade, high-concurrency customer support automation for e-commerce brands on WhatsApp. Engineered with sub-30ms webhook acknowledgment, WAMID idempotency, phone-based zero-login identity, multi-package disambiguation, anti-IDOR security challenges, programmatic vector PDF return labels, and stateful human escalation.**
+> **Customer support automation for e-commerce brands on WhatsApp. Engineered with decoupled webhook acknowledgment, WAMID idempotency, phone-based zero-login identity, multi-package disambiguation, anti-IDOR security challenges, programmatic vector PDF return labels, and stateful human escalation.**
 
 ---
 
@@ -33,14 +33,14 @@ E-commerce businesses losing customer orders over slow WhatsApp response times f
 2. **The Unguarded Chatbot**: Unconstrained prompt wrappers hallucinate tracking numbers, bypass return eligibility windows, or get stuck in repetitive loops with angry customers. Furthermore, naive bot implementations leak sensitive shipping addresses when an attacker types another customer's order ID (*Insecure Direct Object Reference / IDOR*).
 
 The **WhatsApp Support Gateway** solves both problems with an enterprise-ready, hexagonal architecture:
-- **Sub-30ms Ingestion Decoupling**: Validates HMAC-SHA256 signatures, deduplicates inbound messages by WhatsApp Message ID (`WAMID`), enqueues payloads asynchronously, and returns `HTTP 200 OK` to Meta in under 25ms.
+- **Decoupled Ingestion**: Validates HMAC-SHA256 signatures, deduplicates inbound messages by WhatsApp Message ID (`WAMID`), enqueues payloads asynchronously, and returns `HTTP 200 OK` to Meta before any business processing runs. The integration suite asserts that this in-process acknowledgment completes in under 100 ms.
 - **Phone-Based Zero-Login Identity**: Leverages WhatsApp's protocol-authenticated phone numbers. Customers never need to create accounts, remember passwords, or dig up order numbers to check package status.
 - **Multi-Package Disambiguation**: Automatically identifies when a shopper has multiple active shipments (e.g., `#ORD-1004` and `#ORD-1005`) and presents native interactive buttons for instant 1-tap package tracking.
 - **Anti-IDOR Security Shield**: If a shopper queries an order placed under a different phone number (such as a gift or shared household account), the gateway demands the last 4 digits of the phone number on file before revealing order details.
 - **Automated Returns & Instant Vector PDF Labels**: Evaluates store return policies on delivered packages (`#ORD-1003`) and dynamically generates printable vector PDF shipping labels complete with scannable Code128 barcodes and RMA packing slips.
 - **Shopify Admin REST API Integration**: Swappable order repository ports supporting live Shopify store sync (`ShopifyOrderAdapter`) and offline development fixtures.
 - **Stateful Human Escalation & Strict Bot Muting**: Dispatches webhook alerts to external helpdesks (Zendesk / n8n), completely mutes the automated bot to eliminate spam, and opens a real-time two-way WebSocket bridge for human agents.
-- **Zero-Credential Dual-Pane Cockpit (`/demo`)**: An embedded web cockpit with a simulated WhatsApp phone interface on the left and a live engine telemetry console on the right (speed, HMAC status, bot intent, and real-time server logs).
+- **Zero-Credential Dual-Pane Cockpit (`/demo`)**: An embedded web cockpit with a simulated WhatsApp phone interface on the left and a live engine telemetry console on the right (measured processing time, bot intent, session state, and real-time server logs). The simulator calls the engine directly and bypasses `POST /webhook`, so the console reports the HMAC check as skipped.
 
 ---
 
@@ -55,7 +55,7 @@ flowchart TD
     end
 
     subgraph GatewayCore ["WhatsApp Support Gateway Service"]
-        subgraph IngestionBoundary ["1. Ingestion Boundary (Sub-30ms)"]
+        subgraph IngestionBoundary ["1. Ingestion Boundary"]
             WH["POST /webhook"]
             HMAC["HMAC SHA-256 Validator"]
             Idem["Idempotency Filter (WAMID)"]
@@ -96,7 +96,7 @@ flowchart TD
     Idem -->|"Unique WAMID"| QueuePort
     QueuePort -.-> InProcQueue
     QueuePort -.-> RedisQueue
-    WH -->|"HTTP 200 OK (sub-25ms)"| MetaAPI
+    WH -->|"HTTP 200 OK"| MetaAPI
 
     InProcQueue --> Processor
     RedisQueue --> Processor
@@ -161,7 +161,7 @@ cp .env.example .env
 # 3. Install dependencies & development tools
 uv sync --all-extras
 
-# 4. Run the complete automated test suite (103 tests)
+# 4. Run the complete automated test suite (105 tests)
 uv run pytest
 
 # 5. Start the Gateway Development Server
@@ -236,7 +236,7 @@ docker compose down
 Every component in this repository is built test-first following strict test-driven development (TDD), full type safety, and clean linting standards.
 
 ```bash
-# 1. Run all 103 automated tests (unit + integration)
+# 1. Run all 105 automated tests (unit + integration)
 uv run pytest -v
 
 # 2. Strict type verification across all source files (mypy)
@@ -246,10 +246,10 @@ uv run mypy src tests
 uv run ruff check .
 ```
 
-### Test Suite Breakdown (103 Tests)
+### Test Suite Breakdown (105 Tests)
 - **Unit Tests (`tests/unit/`)**:
   - `test_webhook_handshake.py`: Hub verification challenge & query token verification.
-  - `test_signature.py`: HMAC-SHA256 signature validation, tampering rejection, replay defense.
+  - `test_signature.py`: HMAC-SHA256 signature validation and tampering rejection (replayed deliveries are caught by WAMID deduplication, see `test_idempotency.py`).
   - `test_idempotency.py`: WAMID cache deduplication preventing Meta webhook retry storms.
   - `test_phone_verification.py`: Anti-IDOR 4-digit PIN challenge and order ownership protection.
   - `test_interactive_buttons.py`: Multi-package disambiguation and button payload dispatch.
@@ -271,7 +271,7 @@ uv run ruff check .
 | :--- | :--- | :--- |
 | `GET` | `/health` | Gateway health check (environment, provider status, queue mode). |
 | `GET` | `/webhook` | Meta WhatsApp Cloud API webhook verification challenge handshake. |
-| `POST` | `/webhook` | Inbound WhatsApp webhook ingestion (sub-30ms HMAC validation & queue dispatch). |
+| `POST` | `/webhook` | Inbound WhatsApp webhook ingestion (HMAC validation, deduplication & queue dispatch). |
 | `GET` | `/demo` | Interactive dual-pane web simulator & live engine telemetry cockpit. |
 | `POST` | `/demo/simulate` | Dispatches simulated customer messages into the engine. |
 | `POST` | `/demo/reset/{phone}` | Resets session state, active order, and chat history for a customer phone. |
@@ -302,9 +302,6 @@ cp .env.example .env
 | `WEBHOOK_VERIFY_TOKEN` | `dev_verify_token` | Custom secret token configured in Meta App Dashboard for webhook verification. |
 | `QUEUE_TYPE` | `in_process` | Ingestion queue implementation (`in_process` or `redis`). |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL when `QUEUE_TYPE=redis`. |
-| `LLM_PROVIDER` | `mock` | Language model provider (`mock`, `ollama`, `groq`, or `openai`). |
-| `LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible API base URL (Ollama, vLLM, Groq). |
-| `LLM_MODEL` | `qwen2.5:7b` | Model name to query for semantic tool-calling fallback. |
 | `ORDER_REPOSITORY_TYPE` | `in_memory` | Order storage engine (`in_memory` or `shopify`). |
 | `SHOPIFY_STORE_URL` | `""` | Shopify store domain (`https://store.myshopify.com`). |
 | `SHOPIFY_ACCESS_TOKEN` | `""` | Shopify Admin API access token (`shpat_...`). |

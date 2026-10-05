@@ -12,7 +12,7 @@ def test_default_settings() -> None:
     assert settings.port == 8000
     assert settings.environment == "development"
     assert settings.whatsapp_provider == "mock"
-    assert settings.llm_provider == "mock"
+    assert not hasattr(settings, "llm_provider")
     assert settings.webhook_verify_token == "dev_verify_token"
     assert settings.integration_webhook_url is None
 

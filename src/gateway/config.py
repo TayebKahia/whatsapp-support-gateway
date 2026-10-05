@@ -18,12 +18,6 @@ class Settings(BaseSettings):
     phone_number_id: str = "1000123456789"
     webhook_verify_token: str = "dev_verify_token"
 
-    # AI / LLM Settings
-    llm_provider: Literal["mock", "ollama", "groq", "openai"] = "mock"
-    llm_base_url: str = "http://localhost:11434/v1"
-    llm_api_key: str = "ollama"
-    llm_model: str = "qwen2.5:7b"
-
     # External Webhook Integration (e.g. n8n / Zapier)
     integration_webhook_url: HttpUrl | None = None
 
