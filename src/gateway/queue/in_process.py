@@ -9,7 +9,7 @@ EventHandler = Callable[[InboundMessageEvent], Awaitable[None]]
 
 
 class InProcessAsyncQueue:
-    """In-memory asyncio queue worker pool for sub-30ms webhook acknowledgment."""
+    """In-memory asyncio queue worker pool that decouples webhook acknowledgment from processing."""
 
     def __init__(self, maxsize: int = 10000, num_workers: int = 2) -> None:
         self._queue: asyncio.Queue[InboundMessageEvent] = asyncio.Queue(maxsize=maxsize)

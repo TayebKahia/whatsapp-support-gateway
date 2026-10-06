@@ -81,7 +81,7 @@ async def test_full_e2e_order_tracking_flow() -> None:
         )
         duration_ms = (time.perf_counter() - start) * 1000
 
-        # Sub-30ms acknowledgment
+        # Acknowledged before processing; in-process bound checked below
         assert resp.status_code == 200
         assert resp.json() == {"status": "ok"}
         assert duration_ms < 100

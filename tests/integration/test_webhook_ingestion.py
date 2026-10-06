@@ -71,7 +71,7 @@ async def test_webhook_ingestion_and_idempotency() -> None:
 
         assert response1.status_code == 200
         assert response1.json() == {"status": "ok"}
-        # Meta requires < 3000ms; we target sub-30ms
+        # Acknowledged before processing; in-process bound checked below
         assert duration_ms < 100
 
         # Wait for queue worker to pick up
