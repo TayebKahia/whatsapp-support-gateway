@@ -3,6 +3,7 @@ name = "whatsapp-support-gateway"
 version = "0.1.0"
 description = "Production-grade, resilient WhatsApp Business API customer support gateway with bounded AI tool-calling and human escalation."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
