@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Pre-commit gate: runs every `uv run …` step from CI except pytest (the integration tests need Docker
+# and stay in CI and in the reviewer's run). CI's workflow file is the single source of truth.
+# Enable once per clone: git config core.hooksPath .githooks
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+grep -E '^\s*run:\s*uv run ' .github/workflows/ci.yml | sed -E 's/^\s*run:\s*//' | grep -v 'pytest' |
+  while IFS= read -r gate; do
+    echo "pre-commit: ${gate}"
+    bash -c "${gate}" </dev/null || { echo "pre-commit: FAILED: ${gate}" >&2; exit 1; }
+  done
